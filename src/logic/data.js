@@ -1,8 +1,62 @@
-/* Demo data and pure helpers for the Pulse prototype (Kilbride Group). */
+/* Demo data and pure helpers for the Pulse prototype (Lavelle Electrical Group).
+   Every story figure is read from lavelle.js, so a number can only be wrong in one place.
+   All values are mock demo data. */
+import * as LV from "./lavelle";
 
 const INK="var(--ink)", BODY="var(--body)", DIM="var(--dim)", FAINT="var(--faint)";
 const LIME="var(--accent)", GREEN="var(--ok)", AMBER="var(--warn)", RED="var(--bad)", NEUTRAL="var(--neutral)";
 const MONO="var(--mono)";
+
+/* ---- story figures, all derived from lavelle.js ---- */
+const E = LV.eur, EK = LV.eurK, P = LV.pct, N = LV.num;
+const T = LV.TOTALS;
+const CP = LV.PROJECT("castlepark"), RS = LV.PROJECT("ringsend"), KM = LV.PROJECT("kimmage"), HX = LV.PROJECT("harbour");
+const CLAIM = E(LV.CASTLE_CLAIM);
+const CLAIM_PKGS = LV.CASTLE_PACKAGES.map(k => Object.assign({}, k, {claim: LV.claimFor(k, k.pct)}));
+const CLAIMED_PKGS = CLAIM_PKGS.filter(k => k.claim > 0);
+const TOP_PKGS = CLAIMED_PKGS.slice().sort((a, b) => b.claim - a.claim);
+const PO1 = LV.POS.find(p => p.no === "PO-4821");
+const AWAIT = LV.POS.filter(p => p.status === "Awaiting Approval");
+const AWAIT_VAL = LV.sum(AWAIT, p => p.value);
+const INV72 = LV.INVOICES.find(i => i.no === "INV-1072");
+const INV84 = LV.INVOICES.find(i => i.no === "INV-1084");
+const APEX = LV.INVOICES.find(i => i.no === "INV-1061");
+const OPEN_INV = LV.INVOICES.filter(i => i.status !== "Paid" && i.no !== "INV-1084");
+const OUTSTANDING = LV.OUTSTANDING(false);
+const OVERDUE = LV.INVOICES.filter(i => /overdue/i.test(i.status));
+const OVERDUE_VAL = LV.sum(OVERDUE, i => i.amount);
+const D = LV.DIESEL, RL = LV.RINGSEND_LABOUR;
+const UNALLOC_TXNS = LV.UNALLOC_FUEL({});
+const DIESEL_ALLOC = LV.sum(LV.DIESEL_BY_PROJECT, d => d[1]);
+const HRS_VAR = CP.weekHrs - CP.budgetHrs;
+const HRS_PCT = HRS_VAR / CP.budgetHrs * 100;
+const CASTLE_ISSUES = LV.ISSUES.filter(i => i.project === "castlepark");
+const CASTLE_TOMORROW = LV.DELIVERIES.filter(d => d.project === "castlepark" && d.when === "Tomorrow");
+const BEHIND = LV.PROJECTS.filter(p => p.complete < p.programme).sort((a, b) => (b.programme - b.complete) - (a.programme - a.complete));
+const RESI = LV.PROJECTS.filter(p => p.sector === "Residential");
+const RESI_CONTRACT = LV.sum(RESI, p => p.contract);
+const RESI_MARGIN = LV.sum(RESI, p => p.forecastGP) / RESI_CONTRACT * 100;
+const LIVE_LABOUR = LV.LABOUR_BY_PROJECT.filter(l => l.hours > 0);
+const LIVE_HRS = LV.sum(LIVE_LABOUR, l => l.hours), LIVE_BUDGET = LV.sum(LIVE_LABOUR, l => l.budget);
+const RS_CREW = LV.ON_SITE.filter(e => e.project === "ringsend");
+const RS_SUBS = RS_CREW.filter(e => e.sub).length;
+const QUOTES_DUE = LV.OPPS.filter(o => /^(Mon|Tue|Wed|Thu|Fri)$/.test(o.due));
+const PIPELINE = LV.sum(LV.OPPS, o => o.value);
+const SANDYFORD = LV.OPPS.find(o => o.id === LV.COUNTFIRE.opp);
+const PRYSMIAN = LV.SUPPLIERS.find(s => s.name === "Prysmian");
+const CLONSKEAGH_ISSUE = LV.ISSUES.find(i => i.project === "clonskeagh");
+const KIMMAGE_ISSUE = LV.ISSUES.find(i => i.project === "kimmage");
+const WIN_RATE = 31; /* story figure: quote win rate, not modelled in lavelle.js */
+const CT = LV.CLAIM_TREND, CA = LV.CASH_TREND;
+const CLAIM_DELTA = (CT[CT.length - 1] - CT[CT.length - 2]) / CT[CT.length - 2] * 100;
+const CASH_DELTA = (CA[CA.length - 1] - CA[CA.length - 2]) / CA[CA.length - 2] * 100;
+const UTIL = LV.sum(LV.UTILISATION, u => u[1]) / LV.UTILISATION.length;
+const WORDS = ["None","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve"];
+const DAY = {Mon:"Monday", Tue:"Tuesday", Wed:"Wednesday", Thu:"Thursday", Fri:"Friday"};
+const word = (n) => WORDS[n] || String(n);
+const low = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+const signed = (n) => (n > 0 ? "+" : n < 0 ? "−" : "") + N(Math.abs(n));
+const prjName = (id) => LV.PROJECT(id).name;
 
 const ICONS = {
   navHome:"M12 3.2 3.6 9.1v10a1.5 1.5 0 0 0 1.5 1.5h13.8a1.5 1.5 0 0 0 1.5-1.5v-10L12 3.2Z M8.9 13.1h2l1-2.6 1.5 5 1.1-2.4h1.6",
@@ -12,6 +66,18 @@ const ICONS = {
   navRecords:"M12 3.6c3.9 0 7 1.1 7 2.5S15.9 8.6 12 8.6 5 7.5 5 6.1 8.1 3.6 12 3.6Z M5 6.1v5.7c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6.1 M5 11.8v5.7c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-5.7",
   navActivity:"M4.6 4.6h14.8A1.6 1.6 0 0 1 21 6.2v11.6a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 17.8V6.2a1.6 1.6 0 0 1 1.6-1.6Z M6 12.4h2.2l1.5-4.1 2.3 8 1.9-5.4 1.2 1.5H18",
   navAdmin:"M12 2.9 5 5.6v5.9c0 4 2.8 7.1 7 8.6 4.2-1.5 7-4.6 7-8.6V5.6L12 2.9Z M12 8.6a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z M8.8 16.3a3.6 3.6 0 0 1 6.4 0",
+  /* pencil over a ruler: Countfire take-offs and estimates */
+  navEstimating:"M3.5 20.5h17 M5.5 20.5v-2 M9 20.5v-2.6 M12.5 20.5v-2 M16 20.5v-2.6 M6.2 15.2 15.6 5.8a1.8 1.8 0 0 1 2.6 0 1.8 1.8 0 0 1 0 2.6l-9.4 9.4-3.4.8.8-3.4Z M14.2 7.2l2.6 2.6",
+  /* tower crane over a site box */
+  navProjects:"M6 20.5V4 M6 4h13.5 M6 8.2 10.2 4 M17 4v5.6 M15.4 9.6h3.2v2.8h-3.2V9.6Z M3.5 20.5h17 M12 20.5v-4.8h6v4.8",
+  /* invoice with a tick: claims and finance */
+  navClaims:"M7 3.5h10v17l-2.5-1.6-2.5 1.6-2.5-1.6L7 20.5v-17Z M9.5 7.6h5 M9.5 10.8h3 M9.6 14.4l1.7 1.7 3.2-3.3",
+  /* two people: workforce */
+  navWorkforce:"M9 12a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 9 12Z M16.5 12.5a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2Z M2.6 19.6c.8-2.8 3.2-4.4 6.4-4.4s5.6 1.6 6.4 4.4 M17 15.4c2.2.4 3.7 1.8 4.3 4.2",
+  /* delivery box: procurement */
+  navProcurement:"M4 7.8 12 3.5l8 4.3v8.4L12 20.5l-8-4.3V7.8Z M4 7.8l8 4.3 8-4.3 M12 12.1v8.4 M8 5.6l8 4.3",
+  /* fuel pump: fleet and diesel */
+  navFleet:"M5 20.5V5.2A1.7 1.7 0 0 1 6.7 3.5h6.6A1.7 1.7 0 0 1 15 5.2v15.3 M3.5 20.5h13 M7.5 7h5v4h-5V7Z M15 9.5h1.8a1.7 1.7 0 0 1 1.7 1.7v5a1.3 1.3 0 0 0 2.6 0V8.6l-2.5-2.2",
   helios:"M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4-.8L3 21l1.9-4.9A8.3 8.3 0 0 1 4 11.5 8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z M8 12h1.6l1.2-2.6 1.6 5 1.4-2.4H16",
   inbox:"M3 13h4l1.5 3h7l1.5-3h4 M3 13l2.4-7A2 2 0 0 1 7.3 4.6h9.4a2 2 0 0 1 1.9 1.4L21 13v4.4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V13Z",
   work:"M6 4.6h12a1.6 1.6 0 0 1 1.6 1.6v12.2A1.6 1.6 0 0 1 18 20H6a1.6 1.6 0 0 1-1.6-1.6V6.2A1.6 1.6 0 0 1 6 4.6Z M8.4 10.4l1.9 1.9 3.9-3.9 M8.4 15.6h7.2",
@@ -38,99 +104,145 @@ const ICONS = {
 /* Ontology stays first and is never removed (PulseLogic enforces this too). */
 const REC_SECTIONS = [
   {id:"ontology", label:"Ontology", blurb:"How every record connects: entities, predicates and the paths between them."},
-  {id:"files", label:"Files", blurb:"Documents, contracts and certificates — indexed where Helios can read them."},
-  {id:"contacts", label:"Contacts", blurb:"Every person the business deals with, staff and external."}
+  {id:"files", label:"Files", blurb:"Quotes, contracts, claims and certificates, indexed where Pulse can read them."},
+  {id:"contacts", label:"Contacts", blurb:"Every person Lavelle deals with: staff, main contractors and suppliers."}
 ];
 
 const CONTACTS = [
-  ["Aoife Nolan","Accounts manager","aoife@kilbridegroup.ie","Kilbride Group","staff","var(--accent)"],
-  ["Séamus Byrne","Senior installer","seamus@kilbridegroup.ie","Kilbride Group","staff","#9fd6f0"],
-  ["Tom Walsh","Operations lead","tom@kilbridegroup.ie","Kilbride Group","staff","#e6c78a"],
-  ["Niamh Cronin","Trade counter","niamh@kilbridegroup.ie","Kilbride Group","staff","#c8b4f0"],
-  ["Dermot Casey","Buyer","dermot@caseybuilders.ie","Casey Builders","customer","#9fd6f0"],
-  ["Liam Dunne","Owner","liam@dunneandsons.ie","Dunne & Sons Ltd","on stop","#e2a08c"],
-  ["Máire Fitzgerald","Director","maire@fitzheating.ie","Fitzgerald Heating","watch","#e6c78a"],
-  ["Paul Ó Riain","Site foreman","paul@oriain.ie","Ó Riain, Glanmire","customer","#a8e0c0"],
-  ["Cathal Moore","Account manager","cathal@munsterplumbing.ie","Munster Plumbing","supplier","#c8b4f0"]
+  ["Martin Lavelle","Managing Director","martin@lavelleelectrical.ie","Lavelle Electrical Group","staff","var(--accent)"],
+  ["Kevin Byrne","Senior Project Manager","kevin@lavelleelectrical.ie","Lavelle Electrical Group","staff","#9fd6f0"],
+  ["Marty Byrne","Foreman, CastlePark Manor","marty@lavelleelectrical.ie","Lavelle Electrical Group","staff","#e6c78a"],
+  ["Dara Kelly","Electrician, CastlePark Manor","dara@lavelleelectrical.ie","Lavelle Electrical Group","staff","#a8e0c0"],
+  ["Sean Murphy","Foreman, Harbour Exchange","sean@lavelleelectrical.ie","Lavelle Electrical Group","staff","#c8b4f0"],
+  ["Liam Doyle","Foreman, Ringsend Upgrade","liam@lavelleelectrical.ie","Lavelle Electrical Group","staff","#9fd6f0"],
+  ["Daniel Walsh","Estimator","daniel@lavelleelectrical.ie","Lavelle Electrical Group","staff","#e6c78a"],
+  ["Sarah Keane","Estimator","sarah@lavelleelectrical.ie","Lavelle Electrical Group","staff","#c8b4f0"],
+  ["Emma Doyle","Accounts Administrator","emma@lavelleelectrical.ie","Lavelle Electrical Group","staff","#a8e0c0"],
+  ["Rachel Byrne","Operations Administrator","rachel@lavelleelectrical.ie","Lavelle Electrical Group","staff","#e2a08c"],
+  ["Aidan Kellett","Contracts Manager","aidan@kellettconstruction.ie","Kellett Construction","customer","#9fd6f0"],
+  ["Fiona Brennan","Finance Controller","accounts@northbankdevelopments.ie","Northbank Developments","watch","#e6c78a"],
+  ["Ciara Whelan","Project Director","ciara@apexfitout.ie","Apex Fit-Out","customer","#a8e0c0"],
+  ["Brendan Coyle","Engineering Manager","brendan@eastpointengineering.ie","Eastpoint Engineering","customer","#c8b4f0"],
+  ["Orla Hennessy","Development Manager","orla@harbourdevelopments.ie","Harbour Developments","customer","#e2a08c"],
+  ["Paddy Moran","Branch Manager","paddy.moran@cef.ie","CEF","supplier","#9fd6f0"],
+  ["Joanne Burke","Account Manager","joanne.burke@rexel.ie","Rexel","supplier","#e6c78a"],
+  ["Declan Nash","Trade Sales","declan@kellihers.ie","Kellihers","supplier","#a8e0c0"],
+  ["Mark Ellis","Key Account Manager","mark.ellis@prysmian.ie","Prysmian","supplier","#c8b4f0"]
 ];
 
 const FILE_TREE = [
-  {type:"folder", id:"f-org", name:"Organisations", depth:0},
-  {type:"file", id:"fl-1", name:"Casey Builders — framework 2026.pdf", depth:1, parent:"f-org", indexed:true,
-   path:"Organisations / Casey Builders", title:"Casey Builders — framework 2026",
-   facts:[["TYPE","PDF · 6 pages"],["ADDED","12 Jan 2026"],["INDEXED","All 6 pages"],["OWNER","Aoife Nolan"]],
-   body:["The framework sets the discount tiers for 2026 and the payment terms Casey Builders trade on. Tier two applies from €40k of annual spend, which they passed in August.",
-     "Pricing is fixed to the June supplier agreement, so a change on the Munster side flows through here rather than being renegotiated separately.",
-     "Termination requires sixty days' notice on either side. Nothing in the document blocks putting the account on stop for non-payment."],
-   links:[["Casey Builders","org"],["Dermot Casey","person"],["PO-4471","order"]]},
-  {type:"file", id:"fl-2", name:"Dunne & Sons — credit application.pdf", depth:1, parent:"f-org", indexed:true,
-   path:"Organisations / Dunne & Sons Ltd", title:"Dunne & Sons — credit application",
-   facts:[["TYPE","PDF · 4 pages"],["ADDED","3 Mar 2011"],["INDEXED","All 4 pages"],["OWNER","Aoife Nolan"]],
-   body:["The original 2011 application, signed by Liam Dunne, setting a €20,000 limit against thirty-day terms.",
-     "Days-to-pay ran at twelve for most of that period and moved to seventy-four after May 2026, which is what put the account on stop.",
-     "The personal guarantee in section four is still in force and has never been called on."],
-   links:[["Dunne & Sons Ltd","org"],["Liam Dunne","person"],["INV-10428","invoice"]]},
-  {type:"folder", id:"f-cert", name:"Certificates", depth:0},
-  {type:"file", id:"fl-3", name:"Séamus Byrne — gas safe 2026.pdf", depth:1, parent:"f-cert", indexed:true,
-   path:"Certificates / Installers", title:"Séamus Byrne — gas safe 2026",
-   facts:[["TYPE","PDF · 2 pages"],["EXPIRES","14 Nov 2026"],["INDEXED","Both pages"],["OWNER","Operations"]],
-   body:["Registration covers domestic boilers and commercial water heaters, valid to 14 November 2026.",
-     "The renewal reminder fires sixty days before expiry. That routine failed twice this week because Mallow yard has no contact on file."],
-   links:[["Séamus Byrne","person"],["Certificate renewal reminder","workflow"]]},
-  {type:"file", id:"fl-4", name:"Public liability — 2026.pdf", depth:1, parent:"f-cert", indexed:false,
-   path:"Certificates / Insurance", title:"Public liability — 2026",
-   facts:[["TYPE","PDF · 12 pages"],["EXPIRES","1 Apr 2027"],["INDEXED","Not indexed"],["OWNER","Operations"]],
-   body:["Cover to €6.5m across all three locations. Not indexed, so Helios cannot answer questions from it yet.",
-     "Indexing it would let the site-visits module check cover before a job is booked at a new address."],
-   links:[["Head office","location"],["Ballincollig depot","location"]]},
+  {type:"folder", id:"f-proj", name:"Projects", depth:0},
+  {type:"file", id:"fl-1", name:"CastlePark Manor, quote and contract.pdf", depth:1, parent:"f-proj", indexed:true,
+   path:"Projects / CastlePark Manor", title:"CastlePark Manor, quote and contract",
+   facts:[["TYPE","PDF, 18 pages"],["VALUE",E(CP.contract)],["CLIENT",CP.client],["OWNER",CP.pm]],
+   body:["Full electrical installation at " + CP.location + " for " + CP.client + ", contract value " + E(CP.contract) + ", running " + CP.start + " to " + CP.end + ".",
+     "The quote splits the job into " + LV.CASTLE_PACKAGES.length + " work packages. The largest are " + LV.CASTLE_PACKAGES.slice().sort((a, b) => b.value - a.value).slice(0, 3).map(k => k.name + " at " + E(k.value)).join(", ") + ".",
+     "Claims are monthly valuations by package: value times percent complete, less what was claimed before. That is the rule the Claims Agent applies."],
+   links:[[CP.client,"org"],[CP.pm,"person"],["July claim","claim"]]},
+  {type:"file", id:"fl-2", name:"CastlePark Manor, July claim valuation.xlsx", depth:1, parent:"f-proj", indexed:true,
+   path:"Projects / CastlePark Manor / Claims", title:"CastlePark Manor, July claim valuation",
+   facts:[["TYPE","XLSX, 3 sheets"],["VALUE",CLAIM],["STATUS",CP.july.status],["OWNER",CP.pm]],
+   body:["The July valuation comes to " + CLAIM + " across " + low(word(CLAIMED_PKGS.length)) + " packages. " + TOP_PKGS.slice(0, 2).map(k => k.name + " carries " + E(k.claim)).join(" and ") + ".",
+     "Recalculated at 11:06 by the Claims Agent from " + CP.pm + "'s site progress. It is waiting on Martin's approval before it goes to " + CP.client + " as " + INV84.no + ".",
+     "Claimed to date including July is " + E(CP.claimed) + ", of which " + E(CP.paid) + " has been paid."],
+   links:[[CP.client,"org"],[CP.pm,"person"],[INV84.no,"invoice"]]},
+  {type:"file", id:"fl-3", name:"CastlePark Manor, Block A test certificates.pdf", depth:1, parent:"f-proj", indexed:true,
+   path:"Projects / CastlePark Manor / Certificates", title:"CastlePark Manor, Block A test certificates",
+   facts:[["TYPE","PDF, 9 pages"],["BLOCK","Block A"],["INDEXED","All 9 pages"],["OWNER",CP.foreman]],
+   body:["Insulation resistance and continuity results for the Block A circuits completed to date. Block A containment is at " + LV.CASTLE_BLOCKS[0].work[0][1] + "% and first fix at " + LV.CASTLE_BLOCKS[0].work[1][1] + "%.",
+     "Completion certificates follow second fix, which is at " + LV.CASTLE_BLOCKS[0].work[2][1] + "% in Block A. Block B results are not due yet."],
+   links:[[CP.foreman,"person"],[CP.name,"project"]]},
+  {type:"folder", id:"f-est", name:"Estimating", depth:0},
+  {type:"file", id:"fl-4", name:"Sandyford Office Campus, Countfire take-off.cf", depth:1, parent:"f-est", indexed:true,
+   path:"Estimating / " + SANDYFORD.client, title:"Sandyford Office Campus, Countfire take-off",
+   facts:[["TYPE","Countfire take-off"],["VALUE",E(SANDYFORD.value)],["UPDATED",LV.COUNTFIRE.updated],["OWNER",LV.COUNTFIRE.estimator]],
+   body:["Imported from Countfire at " + LV.COUNTFIRE.updated + ". " + LV.SANDYFORD_PACKAGES.length + " packages: " + LV.SANDYFORD_PACKAGES.map(p => p.name + " (" + p.qty + ")").join(", ") + ".",
+     "Quoted value is " + E(LV.sum(LV.SANDYFORD_PACKAGES, p => p.value)) + " including margin and preliminaries. It is due " + (DAY[SANDYFORD.due] || SANDYFORD.due) + " and needs Martin's sign-off before it goes to " + SANDYFORD.client + "."],
+   links:[[SANDYFORD.client,"org"],[LV.COUNTFIRE.estimator,"person"]]},
   {type:"folder", id:"f-fin", name:"Finance", depth:0},
-  {type:"file", id:"fl-5", name:"INV-10428.pdf", depth:1, parent:"f-fin", indexed:true,
-   path:"Finance / Invoices", title:"INV-10428",
-   facts:[["TYPE","PDF · 1 page"],["VALUE","€28,410"],["AGE","74 days"],["OWNER","Aoife Nolan"]],
-   body:["The oldest unpaid invoice on the ledger and the reason Dunne & Sons is on stop.",
-     "Two reminders have gone out. The third is drafted and waiting on the finance manager inside the chase workflow."],
-   links:[["Dunne & Sons Ltd","org"],["Chase unpaid invoices","workflow"]]},
-  {type:"file", id:"fl-6", name:"Month-end close — August.xlsx", depth:1, parent:"f-fin", indexed:false,
-   path:"Finance / Close", title:"Month-end close — August",
-   facts:[["TYPE","XLSX · 9 sheets"],["ADDED","1 Sep 2026"],["INDEXED","Not indexed"],["OWNER","Aoife Nolan"]],
-   body:["The working file behind the August close. Cash collected came in at €368k against €358k in July.",
-     "Spreadsheets are stored but not indexed by default — the numbers Helios quotes come from the ledger, not from here."],
-   links:[["Finance","area"],["Month-end close","workflow"]]}
+  {type:"file", id:"fl-5", name:INV72.no + ".pdf", depth:1, parent:"f-fin", indexed:true,
+   path:"Finance / Invoices", title:INV72.no,
+   facts:[["TYPE","PDF, 1 page"],["VALUE",E(INV72.amount)],["STATUS",INV72.status],["OWNER","Emma Doyle"]],
+   body:["The " + INV72.note + " for " + prjName(INV72.project) + ", issued to " + INV72.client + " and due " + INV72.due + ". It is now " + INV72.status + ".",
+     KIMMAGE_ISSUE.note + " A reminder is drafted and waiting for a yes inside the chase workflow."],
+   links:[[INV72.client,"org"],["Fiona Brennan","person"],["Chase overdue invoices","workflow"]]},
+  {type:"file", id:"fl-6", name:INV84.no + ".pdf", depth:1, parent:"f-fin", indexed:true,
+   path:"Finance / Invoices", title:INV84.no + ", draft",
+   facts:[["TYPE","PDF, 2 pages"],["VALUE",E(INV84.amount)],["STATUS","Draft, waiting on the claim"],["OWNER","Emma Doyle"]],
+   body:["The " + INV84.note + " invoice for " + prjName(INV84.project) + ", to " + INV84.client + ", due " + INV84.due + ".",
+     "It is generated from the approved claim, so it stays a draft until Martin approves the " + CLAIM + " valuation. Xero posts it once issued."],
+   links:[[INV84.client,"org"],["July claim","claim"]]},
+  {type:"file", id:"fl-7", name:"Month-end close.xlsx", depth:1, parent:"f-fin", indexed:false,
+   path:"Finance / Close", title:"Month-end close",
+   facts:[["TYPE","XLSX, 9 sheets"],["CLAIMED",EK(T.julyClaimed)],["INDEXED","Not indexed"],["OWNER","Emma Doyle"]],
+   body:["The working file behind the close. Claims came to " + EK(T.julyClaimed) + " this month against " + EK(CT[CT.length - 2] * 1000) + " last month, with a forecast gross margin of " + P(T.margin) + ".",
+     "Spreadsheets are stored but not indexed by default. The numbers Pulse quotes come from Xero and LiveCosts, not from here."],
+   links:[["Finance","area"],["Month-end close pack","workflow"]]},
+  {type:"folder", id:"f-cert", name:"Certificates and insurance", depth:0},
+  {type:"file", id:"fl-8", name:"Public liability insurance 2026.pdf", depth:1, parent:"f-cert", indexed:false,
+   path:"Certificates / Insurance", title:"Public liability insurance 2026",
+   facts:[["TYPE","PDF, 12 pages"],["COVERS","Dublin and Galway"],["INDEXED","Not indexed"],["OWNER","Rachel Byrne"]],
+   body:["Cover for all Lavelle sites and both offices. Not indexed, so Pulse cannot answer questions from it yet.",
+     "Indexing it would let the tender follow-up check cover levels before a quote goes to a new main contractor."],
+   links:[["Dublin","location"],["Galway","location"],["Insurance and certificate renewal","workflow"]]},
+  {type:"file", id:"fl-9", name:"18th Edition qualifications, electricians.pdf", depth:1, parent:"f-cert", indexed:true,
+   path:"Certificates / Qualifications", title:"18th Edition qualifications, electricians",
+   facts:[["TYPE","PDF, 14 pages"],["COVERS","Employed electricians"],["INDEXED","All 14 pages"],["OWNER","Rachel Byrne"]],
+   body:["Wiring regulations qualifications for the employed electricians, one page each, with the issue date.",
+     "Subcontractors hold their own and upload them at onboarding. The renewal routine gives sixty days' notice before anything lapses."],
+   links:[["Electricians","team"],["Insurance and certificate renewal","workflow"]]},
+  {type:"file", id:"fl-10", name:"RECI and ESB Networks registration.pdf", depth:1, parent:"f-cert", indexed:true,
+   path:"Certificates / Registration", title:"RECI and ESB Networks registration",
+   facts:[["TYPE","PDF, 4 pages"],["COVERS","Lavelle Electrical Group"],["INDEXED","All 4 pages"],["OWNER","Martin Lavelle"]],
+   body:["Registered electrical contractor status and the ESB Networks registration used for new connections and completion certs.",
+     "Every main contractor asks for it at prequalification, so the tender follow-up attaches it automatically."],
+   links:[["Martin Lavelle","person"],["New tender follow-up","workflow"]]}
 ];
 
+/* Seventeen entity types on a 1000 x 560 canvas, Project at the centre. Predicates
+   are edge labels. Every edge is [x1,y1,x2,y2] and must land on node coordinates. */
 const ONTO_NODES = [
-  ["Organisation","entity",500,300,1,"Customers and suppliers. Balances arrive from the ledger through the record spine."],
-  ["Person","entity",300,190,1,"One entity for staff and external contacts, scoped by role rather than split in two."],
-  ["Location","entity",700,190,1,"Multi-branch as a business concept: locations plus the location permission scope."],
-  ["Team","entity",250,430,1,"Teams are records, so the team scope on a grant resolves against them."],
-  ["Task","entity",690,430,1,"Work, whatever it is attached to. Queues are one permission-filtered query."],
-  ["Approval","entity",850,320,0,"A request and its steps. Each decision is written as the person who made it."],
-  ["Invoice","ledger",390,95,0,"Read through the spine — the wholesale ledger stays the source of truth."],
-  ["Order","ledger",620,95,0,"Purchase and sales orders, linked to the organisation that raised them."],
-  ["Visit","module",860,470,0,"Contributed by site-visits, with its own table, predicate and tools."],
-  ["File","entity",140,300,0,"Documents against any record. Indexed pages are what Helios can read."],
-  ["works at","predicate",395,240,0,"Person → Organisation."],
-  ["located at","predicate",605,240,0,"Organisation → Location."],
-  ["member of","predicate",360,370,0,"Person → Team."],
-  ["relates to","predicate",600,370,0,"Task → anything."],
-  ["attached to","predicate",140,372,0,"File → anything."]
+  ["Project","entity",500,285,1,"The centre of the business. CastlePark Manor is connected to " + CP.client + ", " + CP.pm + ", " + CP.staff + " employees, " + LV.CASTLE_PACKAGES.length + " work packages, " + LV.CASTLE_PO_COUNT + " purchase orders, " + (LV.CASTLE_CLAIMS.length + 1) + " claims, 71 supplier invoices, " + CASTLE_ISSUES.length + " site issues, " + CP.weekHrs + " hours this week."],
+  ["Customer","entity",500,30,1,"The main contractor or developer a project is for. " + CP.client + " is the customer on CastlePark Manor; Northbank Developments on Kimmage Phase II."],
+  ["Contact","entity",700,30,0,"A person at a customer or supplier. Contacts hang off their organisation, so a chase email always finds the right accounts address."],
+  ["Quote","entity",300,30,0,"What was priced and sent. A won quote becomes the project and its packages become the work packages."],
+  ["Estimate","module",120,30,0,"Imported from Countfire. Quantities by package roll up into the quote, as with Sandyford Office Campus at " + E(SANDYFORD.value) + "."],
+  ["Document","entity",880,30,0,"Contracts, claim valuations, test certificates and insurance, attached to any record. Indexed pages are what Pulse can read."],
+  ["Supplier","entity",110,150,0,"CEF, Rexel, Kellihers, Prysmian and others. Price movement is tracked per supplier, such as Prysmian at " + PRYSMIAN.trend + "."],
+  ["Purchase Order","ledger",300,150,1,"Raised in LiveCosts against a project and a supplier. " + PO1.no + " is " + E(PO1.value) + " of " + low(PO1.item) + " for CastlePark, waiting on Martin."],
+  ["Site","entity",700,150,0,"Where the work happens. One project can have several sites; CastlePark Manor is in " + CP.location + "."],
+  ["Employee","entity",890,150,1,"Lavelle staff, clocked in through Sync and assigned to a project. " + T.people + " are on site today."],
+  ["Material","entity",100,285,0,"Containment, cable, luminaires and boards, ordered on a purchase order and costed to a work package."],
+  ["Work Package","entity",300,285,0,"A priced section of the quote: Containment, Lighting, Fire Alarm and so on. Claims are built per package from percent complete."],
+  ["Subcontractor","entity",730,285,0,"Specialist labour on a project alongside employees, with their own rates and paperwork."],
+  ["Invoice","ledger",200,430,0,"Read through Xero, which stays the source of truth. " + INV72.no + " to " + INV72.client + " is " + E(INV72.amount) + ", " + INV72.status + "."],
+  ["Claim","entity",380,430,1,"A monthly valuation of a project. The CastlePark July claim is " + CLAIM + " and becomes an invoice once approved."],
+  ["Vehicle","module",610,430,0,"Vans and pickups, each with a driver and a fuel card. " + D.vehicles + " on the fleet."],
+  ["Fuel Card","module",880,430,0,"Every fill is allocated to a project. Card " + D.card + " has " + LV.eur2(D.exception) + " at " + D.place + ", " + D.time + ", that needs allocation."],
+  ["client of","predicate",500,157,0,"Project to Customer."],
+  ["split into","predicate",400,285,0,"Project to Work Package."],
+  ["works on","predicate",615,285,0,"Subcontractor or Employee to Project."],
+  ["claimed on","predicate",440,358,0,"Claim to Project."],
+  ["fuels","predicate",745,430,0,"Fuel Card to Vehicle."]
 ];
 
 const ONTO_EDGES = [
-  [500,300,300,190],[500,300,700,190],[500,300,250,430],[500,300,690,430],
-  [500,300,850,320],[500,300,390,95],[500,300,620,95],[500,300,140,300],
-  [300,190,250,430],[700,190,860,470],[690,430,850,320],[690,430,860,470],
-  [300,190,140,300],[390,95,620,95]
+  [500,285,500,30],[500,285,300,30],[500,285,700,150],[500,285,300,285],
+  [500,285,380,430],[500,285,300,150],[500,285,890,150],[500,285,730,285],
+  [500,285,200,430],[500,285,880,430],
+  [120,30,300,30],[300,30,500,30],[500,30,700,30],[880,30,890,150],
+  [300,150,110,150],[300,150,100,285],[300,285,380,430],[380,430,200,430],
+  [890,150,610,430],[610,430,880,430]
 ];
 
 const REC_TEMPLATES = [
-  ["Field sheet","Records","Labelled fields in a grid — the default for a person, organisation or location.",
+  ["Field sheet","Records","Labelled fields in a grid, the default for a person, customer or site.",
    "M5 5.5h14v13H5v-13Z M5 10h14 M12 10v8.5","grid"],
   ["Contact card","Records","A portrait, key fields and every linked record in one compact panel.",
    "M12 11.5a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z M5.5 19c.8-3 3.3-4.7 6.5-4.7s5.7 1.7 6.5 4.7","card"],
   ["Directory","Records","A sortable table of many records at once, built for lists.",
    "M4.5 6.5h15 M4.5 12h15 M4.5 17.5h15 M4.5 6.5h.01 M4.5 12h.01 M4.5 17.5h.01","rows"],
-  ["Timeline","Case work","Ordered events with who did what and when. Good for a case or a claim.",
+  ["Timeline","Case work","Ordered events with who did what and when. Good for a site issue or a claim.",
    "M12 3.5v17 M12 7.5h6 M12 13h-6 M12 18h6","timeline"],
   ["Kanban board","Case work","Cards in columns by status. For anything that moves through stages.",
    "M5 5h4.5v14H5V5Z M9.75 5h4.5v9h-4.5V5Z M14.5 5H19v6h-4.5V5Z","kanban"],
@@ -138,66 +250,68 @@ const REC_TEMPLATES = [
    "M5 6.5h2l1.4 1.4L11 5.5 M5 12.5h2l1.4 1.4 2.6-2.4 M5 18.5h2l1.4 1.4 2.6-2.4 M15 6.5h4 M15 12.5h4 M15 18.5h4","checklist"],
   ["Ledger","Finance","Rows and running totals. For anything with amounts and dates.",
    "M4 6h16 M4 12h16 M4 18h16 M9 3.5v17","ledger"],
-  ["Invoice","Finance","Line items, totals and a status — built to be sent, not just stored.",
+  ["Invoice","Finance","Line items, totals and a status, built to be sent, not just stored.",
    "M7 3.5h10v17H7v-17Z M9.5 8h5 M9.5 11.5h5 M9.5 15h3","invoice"],
   ["Document","Notes","Long-form text with linked records pulled out down the side.",
    "M7 3.5h7l5 5v12H7v-17Z M14 3.7v5h5 M10 13h6 M10 16.5h4","document"],
-  ["Gallery","Notes","A wall of images and files with a caption on each — for a site or a job.",
+  ["Gallery","Notes","A wall of images and files with a caption on each, for a site or a block.",
    "M4.5 6h6v6h-6V6Z M13.5 6h6v6h-6V6Z M4.5 14h6v4h-6v-4Z M13.5 14h6v4h-6v-4Z","gallery"],
-  ["Map & locations","Ops","A pinboard of places, with the record's fields beside each pin.",
+  ["Map & locations","Ops","A pinboard of sites, with the record's fields beside each pin.",
    "M12 21s6.5-5.6 6.5-11a6.5 6.5 0 1 0-13 0C5.5 15.4 12 21 12 21Z M12 12.8a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2Z","map"],
   ["Schedule","Ops","A calendar of bookings against this record, with recurring rules.",
    "M8 4v3 M16 4v3 M4.5 9.5h15 M6.4 6h11.2A1.9 1.9 0 0 1 19.5 8v10a1.9 1.9 0 0 1-1.9 1.9H6.4A1.9 1.9 0 0 1 4.5 18V8A1.9 1.9 0 0 1 6.4 6Z","schedule"]
 ];
 const REC_TEMPLATE_CATS = ["All","Records","Case work","Finance","Notes","Ops"];
 
-/* ---- admin hub ---- */
-/* ---- admin hub: 13 settings areas in five groups ---- */
+/* ---- admin hub: settings areas in five groups ---- */
 const PEOPLE = [
-  ["Aoife Nolan","Accounts manager","aoife@kilbridegroup.ie","Head office","active","Admin","2 min ago"],
-  ["Séamus Byrne","Senior installer","seamus@kilbridegroup.ie","Ballincollig","active","Standard","1 h ago"],
-  ["Tom Walsh","Operations lead","tom@kilbridegroup.ie","Head office","active","Manager","34 min ago"],
-  ["Niamh Cronin","Trade counter","niamh@kilbridegroup.ie","Ballincollig","active","Standard","3 h ago"],
-  ["Dermot Casey","Buyer · Casey Builders","dermot@caseybuilders.ie","—","external","External","2 days ago"],
-  ["Liam Dunne","Owner · Dunne & Sons","liam@dunneandsons.ie","—","inactive","External","19 days ago"]
+  ["Martin Lavelle","Managing Director","martin@lavelleelectrical.ie","Dublin","active","Admin","2 min ago"],
+  ["Kevin Byrne","Senior Project Manager","kevin@lavelleelectrical.ie","Dublin","active","Manager","15:18"],
+  ["Emma Doyle","Accounts Administrator","emma@lavelleelectrical.ie","Dublin","active","Manager","14 min ago"],
+  ["Daniel Walsh","Estimator","daniel@lavelleelectrical.ie","Dublin","active","Standard","10:42"],
+  ["Niall Regan","Project Manager","niall@lavelleelectrical.ie","Galway","active","Manager","1 h ago"],
+  ["Rachel Byrne","Operations Administrator","rachel@lavelleelectrical.ie","Dublin","active","Standard","32 min ago"],
+  ["Marty Byrne","Foreman, CastlePark Manor","marty@lavelleelectrical.ie","Dublin","active","Standard","3 h ago"],
+  ["Aidan Kellett","Contracts Manager, Kellett Construction","aidan@kellettconstruction.ie","External","external","External","Yesterday"],
+  ["Fiona Brennan","Finance Controller, Northbank Developments","accounts@northbankdevelopments.ie","External","inactive","External","19 days ago"]
 ];
 const ROLE_LEVELS = ["Admin","Manager","Standard","External"];
-const PERM_KEYS = [["view","View records"],["edit","Edit records"],["approve","Approve payments"]];
+const PERM_KEYS = [["view","View records"],["edit","Edit records"],["approve","Approve claims and POs"]];
 const GRANT_DEFS = [
   ["view","View records","Read anything in scope"],
   ["edit","Edit records","Create and change records"],
-  ["approve","Approve decisions","Say yes to parked work"],
+  ["approve","Approve decisions","Say yes to claims and POs"],
   ["pay","Release payments","Send money out"],
   ["export","Export data","Download and share out"],
   ["agents","Manage agents","Create and grant agents"],
   ["settings","Change settings","Modules, roles, integrations"],
   ["audit","Read the audit log","Every action, everyone"]
 ];
-const ROLE_SCOPES = ["All records","Their location","Assigned only"];
+const ROLE_SCOPES = ["All records","Their projects","Assigned only"];
 const DEFAULT_PERMS = {Admin:{view:true,edit:true,approve:true}, Manager:{view:true,edit:true,approve:true},
   Standard:{view:true,edit:true,approve:false}, External:{view:true,edit:false,approve:false}};
 const INTEGRATIONS = [
-  {name:"Gmail", blurb:"Mail in and out of Pulse — threads attach to the record they mention, and drafts wait for your yes.", tint:"#ea4335", status:"connected", statusKind:"ok",
-   glyph:"M4 7.2 12 13 20 7.2 M4 7.2v10.6h16V7.2 M4 7.2 8.5 4h7L20 7.2",
-   lastSync:"2 min ago", usage:"340 emails/day", auth:"OAuth 2.0", scopes:["Read","Send"]},
-  {name:"Xero", blurb:"Invoices, payments and credit notes sync both ways, so the ledger and the record spine never drift.", tint:"#13b5ea", status:"disconnected", statusKind:"bad",
+  {name:"Xero", blurb:"Invoices, payments and credit notes sync both ways, so the ledger and Pulse never drift. Non-negotiable, and healthy.", tint:"#13b5ea", status:"connected", statusKind:"ok",
    glyph:"M4.5 12a7.5 7.5 0 0 1 12.8-5.3 M19.5 12a7.5 7.5 0 0 1-12.8 5.3 M17.3 4v3.3h-3.3 M6.7 20v-3.3H10",
-   lastSync:"27 Feb — token expired", usage:"148 invoices queued", auth:"OAuth 2.0", scopes:["Read","Write"]},
-  {name:"Sage", blurb:"Nightly read of the chart of accounts and balances, mapped onto Pulse organisations.", tint:"#00d639", status:"read only", statusKind:"warn",
-   glyph:"M4 8 12 4.5 20 8 12 11.5 4 8Z M4 13 12 16.5 20 13 M4 18 12 21.5 20 18",
-   lastSync:"14 min ago", usage:"9 accounts synced nightly", auth:"API key", scopes:["Read"]},
-  {name:"HubSpot", blurb:"Contacts, companies and deals stay matched to Pulse records without a second address book.", tint:"#ff7a59", status:"connected", statusKind:"ok",
-   glyph:"M12 9.6a2.4 2.4 0 1 0 0 4.8 2.4 2.4 0 0 0 0-4.8Z M12 4v3.4 M12 16.6V20 M4 12h3.4 M16.6 12H20 M6.5 6.5l2.4 2.4 M15.1 15.1l2.4 2.4 M17.5 6.5l-2.4 2.4 M8.9 15.1l-2.4 2.4",
-   lastSync:"6 min ago", usage:"1.1k contacts synced", auth:"OAuth 2.0", scopes:["Read","Write"]},
-  {name:"WhatsApp Business", blurb:"Send updates and chase messages from the record, logged against it as they go.", tint:"#25d366", status:"write only", statusKind:"warn",
+   lastSync:"2 min ago", usage:E(APEX.amount) + " from Apex Fit-Out confirmed 14:21", auth:"OAuth 2.0", scopes:["Read","Write"]},
+  {name:"LiveCosts", blurb:"Purchase orders, material and labour cost by project. LiveCosts stays the system of record; Pulse puts its numbers on a phone screen.", tint:"#f0c04b", status:"connected", statusKind:"ok",
+   glyph:"M4 6h16 M4 12h16 M4 18h16 M9 3.5v17",
+   lastSync:"4 min ago", usage:LV.CASTLE_PO_COUNT + " CastlePark POs, 71 supplier invoices", auth:"API key", scopes:["Read"]},
+  {name:"Countfire", blurb:"Take-offs import as estimates, with quantities by package ready to price.", tint:"#f0994b", status:"connected", statusKind:"ok",
+   glyph:"M3.5 20.5h17 M5.5 20.5v-2 M9 20.5v-2.6 M12.5 20.5v-2 M16 20.5v-2.6 M6.2 15.2 15.6 5.8a1.8 1.8 0 0 1 2.6 0 1.8 1.8 0 0 1 0 2.6l-9.4 9.4-3.4.8.8-3.4Z",
+   lastSync:"Today " + LV.COUNTFIRE.updated, usage:"Sandyford Office Campus take-off imported", auth:"API key", scopes:["Read"]},
+  {name:"Sync", blurb:"Clock in and clock out from site, matched to the project each person is assigned to.", tint:"#6ad0f0", status:"connected", statusKind:"ok",
+   glyph:"M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17Z M12 7.5V12l3 2",
+   lastSync:"8 min ago", usage:T.people + " clock records today", auth:"API key", scopes:["Read"]},
+  {name:"ServiceM8", blurb:"Legacy CRM and small works jobs. Still connected for history and call-outs while larger projects run through Pulse.", tint:"#9d8cf5", status:"connected", statusKind:"ok",
+   glyph:"M4.5 20V6.4A1.4 1.4 0 0 1 5.9 5h6.2a1.4 1.4 0 0 1 1.4 1.4V20 M13.5 10.5h4.6A1.4 1.4 0 0 1 19.5 12v8 M3 20h18 M7.5 8.5h2.5 M7.5 12h2.5",
+   lastSync:"22 min ago", usage:"Small works jobs and legacy contacts", auth:"API key", scopes:["Read"]},
+  {name:"Microsoft 365", blurb:"Email and calendar in and out of Pulse. Threads attach to the project or invoice they mention, and drafts wait for your yes.", tint:"#5f9cf0", status:"connected", statusKind:"ok",
+   glyph:"M4 7.2 12 13 20 7.2 M4 7.2v10.6h16V7.2 M4 7.2 8.5 4h7L20 7.2",
+   lastSync:"1 min ago", usage:"Shared accounts and project inboxes", auth:"OAuth 2.0", scopes:["Read","Send"]},
+  {name:"WhatsApp", blurb:"Models the Lavelle Projects group flow: site updates and photos filed against the right project. This demo does not connect a live WhatsApp API.", tint:"#25d366", status:"demo", statusKind:"warn",
    glyph:"M4 19.5 5.3 15A7.7 7.7 0 1 1 8.6 18.2L4 19.5Z M8.6 10.3c0 3 2.4 5.4 5.4 5.4",
-   lastSync:"11 min ago", usage:"62 messages/day", auth:"API key", scopes:["Send"]},
-  {name:"Resend", blurb:"Transactional email for everything Pulse generates — reminders, briefings and receipts.", tint:"var(--accent)", status:"write only", statusKind:"warn",
-   glyph:"M3.5 12 20.5 4 16 20l-3.4-6.6L3.5 12Z",
-   lastSync:"38 min ago", usage:"210 emails/day", auth:"API key", scopes:["Send"]},
-  {name:"Composio", blurb:"One connector for the long tail of tools, so a new system does not need a new build.", tint:DIM, status:"not connected", statusKind:"off",
-   glyph:"M9 3v5 M15 3v5 M6 8h12v3.5a6 6 0 0 1-12 0V8Z M12 17.5V21",
-   lastSync:"—", usage:"—", auth:"—", scopes:[]}
+   lastSync:"Demo data", usage:"Lavelle Projects group, modelled", auth:"Not connected", scopes:[]}
 ];
 
 /* Background catalogue. Each entry is pure CSS so a tile is the real thing at
@@ -253,7 +367,7 @@ const THEMES = [
   {id:"slate", label:"Slate", group:"Dark", bg:"#100e0c", surface:"#211c17", ink:"#f4f0ea", accent:"#e8a14a"},
   {id:"plum", label:"Plum", group:"Dark", bg:"#100a10", surface:"#20151f", ink:"#f6eef4", accent:"#f077b0"},
   {id:"ember", label:"Ember", group:"Dark", bg:"#0b0b0b", surface:"#1c1714", ink:"#f7f3ef", accent:"#f4561a"},
-  {id:"harbour", label:"Harbour", group:"Dark", bg:"#0b0e10", surface:"#13171a", ink:"#f3f5f4", accent:"#5ee79a"},
+  {id:"harbour", label:"Harbour", group:"Dark", bg:"#0b0e10", surface:"#13171a", ink:"#f3f5f4", accent:"#2ebfa5"},
   {id:"cargo", label:"Cargo", group:"Dark", bg:"#0a0a0a", surface:"#1a1c1a", ink:"#f2f5f2", accent:"#4ade80"},
   {id:"ocean", label:"Ocean", group:"Dark", bg:"#080e12", surface:"#141f25", ink:"#eaf4f8", accent:"#4fd4d0"},
   {id:"graphite", label:"Graphite", group:"Dark", bg:"#111112", surface:"#212124", ink:"#f4f4f5", accent:"#f4f4f5"},
@@ -280,87 +394,94 @@ const ADMIN_ICONS = {
   data:"M4.5 7.5c0-1.7 3.4-3 7.5-3s7.5 1.3 7.5 3-3.4 3-7.5 3-7.5-1.3-7.5-3Z M4.5 7.5v9c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-9 M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"
 };
 
+/* Data health: the issue counts, the severity split and the latest trend point all add up. */
+const HEALTH_ISSUES = [
+  ["Supplier invoices awaiting a PO match","71","medium","CastlePark supplier invoices from LiveCosts to tie to a work package","Review"],
+  ["Unallocated fuel transactions",String(UNALLOC_TXNS.length),"high",E(D.unallocated) + " of diesel with no project, card " + D.card + " included","Allocate"],
+  ["Costs with no project code","14","high",E(T.unallocated) + " of cost waiting for a project","Review"],
+  ["Duplicate contacts","9","medium","The same person in ServiceM8 and Microsoft 365","Merge"],
+  ["Missing required fields","6","medium","Subcontractor records with no Safe Pass expiry","Fix automatically"],
+  ["Clock records with no project","1","low","Dara Kelly's Sync record is not assigned to CastlePark labour","Assign"],
+  ["Records needing review","4","low","Flagged by an agent as inconsistent","Review"]
+];
+const HEALTH_TOTAL = LV.sum(HEALTH_ISSUES, i => Number(i[1]));
+const HEALTH_SEV = (sev) => String(LV.sum(HEALTH_ISSUES.filter(i => i[2] === sev), i => Number(i[1])));
+
 const ADMIN_CARDS = [
   {id:"people", group:"ORGANISATION", title:"People & access", icon:"people", tint:"#6ad0f0",
    blurb:"Invite, suspend and offboard the people who use Pulse.",
-   tags:["48 people","6 teams","3 locations"], badge:"3 waiting", badgeKind:"warn",
-   footer:"Last login checked 4 minutes ago", action:"Review 3 invites",
+   tags:["55 people","7 teams","2 locations"], badge:"2 waiting", badgeKind:"warn",
+   footer:"Last login checked 4 minutes ago", action:"Review 2 invites",
    listLabel:"WHAT YOU CONTROL HERE",
-   rows:[["Add, invite or remove employees","",""],["Create teams and departments","6 teams"],["Assign managers","4 reporting lines"],
-     ["Set locations","Head office · Ballincollig · Mallow"],["Suspend accounts","2 suspended"],["View last login","48 people tracked"]]},
+   rows:[["Add, invite or remove employees and subcontractors","",""],["Create teams and departments","7 teams"],["Assign managers","3 project managers"],
+     ["Set locations","Dublin and Galway"],["Suspend accounts","1 suspended"],["View last login","55 people tracked"]]},
   {id:"teams", group:"ORGANISATION", title:"Roles & permissions", icon:"shield", tint:"var(--accent)",
    blurb:"Permission templates, and exactly what each person can reach.",
    tags:["4 roles","64 permissions","3 scopes"],
    heroLabel:"THE QUESTION THIS ANSWERS", heroAction:"Show me what someone can access",
-   heroText:"Pick a person and see every record, action and export they can reach — resolved through their grants, not guessed from the menus.",
+   heroText:"Pick a person and see every project, claim, action and export they can reach, resolved through their grants rather than guessed from the menus.",
    footer:"Preview Pulse as another user", action:"Open preview",
    listLabel:"WHAT YOU CONTROL HERE",
    rows:[["Create permission templates","4 in use"],["View, edit, export and delete access","per permission"],
-     ["Restrict by team, location or record owner","3 scopes"],["Set approval limits","€10,000 threshold"],["Preview Pulse as another user",""]]},
+     ["Restrict by team, project or record owner","3 scopes"],["Set approval limits","POs over €10,000 go to Martin"],["Preview Pulse as another user",""]]},
   {id:"structure", group:"ORGANISATION", title:"Company structure", icon:"structure", tint:"#f0c04b",
    blurb:"Who reports to whom, where they work and when.",
-   tags:["3 locations","Europe/Dublin","EUR"],
+   tags:["2 locations","Europe/Dublin","EUR"],
    listLabel:"WHAT YOU CONTROL HERE",
-   rows:[["Company details","Kilbride Group"],["Departments","5"],["Teams","6"],["Locations","3"],
-     ["Reporting lines","4"],["Working hours","08:00–17:30, Mon–Fri"],["Holidays","Irish public holidays"],
-     ["Default currency and timezone","EUR · Europe/Dublin"]]},
+   rows:[["Company details","Lavelle Electrical Group"],["Departments","5"],["Teams","7"],["Locations","Dublin, Galway"],
+     ["Reporting lines","3 project managers to Martin"],["Working hours","07:30 to 17:00, Mon to Fri"],["Holidays","Irish public holidays"],
+     ["Default currency and timezone","EUR, Europe/Dublin"]]},
 
   {id:"agents", group:"CONTROL", title:"Agents & AI controls", icon:"agent", tint:"var(--accent)",
    blurb:"What agents may read, what they may do, and where they must stop.",
-   tags:["7 agents","318 actions today","€0.62 spent"],
+   tags:["8 agents","318 actions today","€0.62 spent"],
    heroLabel:"GLOBAL CONTROL", heroAction:"Pause every agent",
    heroText:"One switch stops every agent immediately. Anything mid-run finishes its current step and then holds.",
    footer:"Write and external tools always need a yes", action:"Review limits",
    listLabel:"WHAT YOU CONTROL HERE",
-   rows:[["Create approved agent roles","7 approved"],["Control which data agents can read","by permission"],
-     ["Control which actions agents can take","read · write · external"],["Set approval requirements","all write tools", true],
+   rows:[["Create approved agent roles","8 approved"],["Control which data agents can read","by permission"],
+     ["Control which actions agents can take","read, write, external"],["Set approval requirements","all write tools", true],
      ["Set spending and usage limits","€40/month cap"],["Manage agent memory and retention","90 days"]]},
   {id:"wf", group:"CONTROL", title:"Workflow controls", icon:"flow", tint:"#9d8cf5",
-   blurb:"The guardrails, not the builder — that lives under Work.",
+   blurb:"The guardrails, not the builder. Building happens under Work.",
    tags:["Managers only","2 approval rules","Retry twice"],
    footer:"Building workflows happens in Work", action:"Open Work",
    listLabel:"WHAT YOU CONTROL HERE",
    rows:[["Who can create workflows","Managers only"],["Maximum autonomy","proposes, never sends", true],
-     ["Approval rules","2 configured"],["Failure handling","retry twice, then notify"],
+     ["Approval rules","claims and POs over €10,000"],["Failure handling","retry twice, then notify"],
      ["Usage limits","500 runs/day"],["Global pause","all workflows", true],["Default notification settings","inbox only"]]},
   {id:"notif", group:"CONTROL", title:"Notifications", icon:"bell", tint:"#f0994b",
    blurb:"Which events reach people, on which channel, and when not to.",
-   tags:["Inbox","WhatsApp","Quiet 19:00–07:00"],
+   tags:["Inbox","Email","Quiet 19:00 to 07:00"],
    listLabel:"WHAT YOU CONTROL HERE",
-   rows:[["Which events trigger notifications","14 of 21 events"],["Email","", true],["WhatsApp","", true],
+   rows:[["Which events trigger notifications","14 of 21 events"],["Email","", true],["WhatsApp (demo flow)","", true],
      ["Mobile push","", false],["In-app","", true],["Escalation rules","after 4 hours unread"],
-     ["Quiet hours","19:00–07:00"],["Daily and weekly summaries","07:00 daily"]]},
+     ["Quiet hours","19:00 to 07:00"],["Daily and weekly summaries","07:00 daily"]]},
 
   {id:"integrations", group:"SYSTEMS", title:"Integrations", icon:"plug", tint:"#6ad0f0",
-   blurb:"Email, accounting, CRM and messaging — and which way data flows.",
-   tags:["6 connected","1 disconnected","2 read-only"], badge:"Xero down", badgeKind:"bad",
-   footer:"Xero token expired 27 February", action:"Reconnect",
+   blurb:"Accounting, project costs, take-offs, timesheets, email and messaging, and which way data flows.",
+   tags:["7 connected","Xero two-way","All healthy"],
+   footer:"Xero synced 2 minutes ago", action:"View connections",
    listLabel:"CONNECTIONS",
-   rows:[["Gmail","read and write"],["Xero","disconnected"],["Sage","read only"],["HubSpot","read and write"],
-     ["WhatsApp Business","write only"],["Resend","write only"],["Composio","not connected"]]},
+   rows:[["Xero","two-way"],["LiveCosts","project costs, read"],["Countfire","estimates, read"],["Sync","attendance, read"],
+     ["ServiceM8","legacy CRM, read"],["Microsoft 365","read and send"],["WhatsApp","demo flow"]]},
   {id:"modules", group:"SYSTEMS", title:"Modules & configuration", icon:"modules", tint:"#f0c04b",
-   blurb:"Turn modules on, and make Pulse speak the business's own words.",
-   tags:["3 installed","1 available","2 renamed terms"],
+   blurb:"Turn modules on, and make Pulse speak Lavelle's own words.",
+   tags:["6 installed","0 available","2 renamed terms"],
    heroLabel:"TERMINOLOGY", heroAction:"Edit terminology",
-   heroText:"Organisation reads as Merchant, and Task reads as Job, everywhere in the interface — including what Helios says back to you.",
+   heroText:"Organisation reads as Customer, and Job reads as Project, everywhere in the interface, including what Pulse says back to you.",
    listLabel:"WHAT YOU CONTROL HERE",
-   rows:[["Enable or disable modules","3 installed"],["Rename business terminology","2 overridden"],
-     ["Create custom fields","9 fields"],["Configure statuses","6 sets"],["Edit record types","7 types"],
+   rows:[["Enable or disable modules","Estimating, Projects, Claims, Workforce, Procurement, Fleet"],["Rename business terminology","2 overridden"],
+     ["Create custom fields","9 fields"],["Configure statuses","claim stages, PO stages"],["Edit record types","17 types"],
      ["Set required information","per record type"],["Manage form layouts","4 layouts"]]},
   {id:"health", group:"SYSTEMS", title:"Data health", icon:"health", tint:"#e2705c",
    blurb:"What is wrong with the data, how bad it is, and the fix.",
-   tags:["7 issue types","231 records affected"], badge:"74 duplicates", badgeKind:"bad",
-   footer:"Last scanned 12 minutes ago", action:"Fix 3 automatically",
+   tags:[HEALTH_ISSUES.length + " issue types", HEALTH_TOTAL + " records affected"], badge:UNALLOC_TXNS.length + " to allocate", badgeKind:"warn",
+   footer:"Last scanned 12 minutes ago", action:"Fix 1 automatically",
    listLabel:"ISSUES FOUND",
-   trend:[312,289,274,256,248,241,231],
-   bySeverity:[["High","137",RED],["Medium","59",AMBER],["Low","35",DIM]],
-   issues:[["Duplicate records","74","high","Merge on matching name and VAT number","Fix automatically"],
-     ["Missing required fields","62","high","4 organisations have no billing email","Fix automatically"],
-     ["Failed imports","18","medium","Re-run the 14 August Sage batch","Retry"],
-     ["Out-of-date information","41","medium","Not touched in over 18 months","Review"],
-     ["Broken connections","1","high","Xero refresh token expired","Reconnect"],
-     ["Unmatched records","23","low","Invoices with no organisation attached","Review"],
-     ["Records needing review","12","low","Flagged by an agent as inconsistent","Review"]],
+   trend:[168,152,141,133,124,117,HEALTH_TOTAL],
+   bySeverity:[["High",HEALTH_SEV("high"),RED],["Medium",HEALTH_SEV("medium"),AMBER],["Low",HEALTH_SEV("low"),DIM]],
+   issues:HEALTH_ISSUES,
    rows:[]},
 
   {id:"security", group:"GOVERNANCE", title:"Security", icon:"lock", tint:"#8fa6ff",
@@ -368,7 +489,7 @@ const ADMIN_CARDS = [
    tags:["SSO on","2FA enforced","3 API keys"], badge:"2 advisories", badgeKind:"warn",
    footer:"2 security recommendations open", action:"Review",
    listLabel:"WHAT YOU CONTROL HERE",
-   rows:[["Single sign-on","Google Workspace", true],["Two-factor authentication","enforced", true],
+   rows:[["Single sign-on","Microsoft 365", true],["Two-factor authentication","enforced", true],
      ["Login policies","30-day session"],["Active sessions","51"],["Approved devices","44"],
      ["IP restrictions","off", false],["Security alerts","on", true],["API keys","3 active"],
      ["Data retention rules","7 years"]]},
@@ -378,26 +499,26 @@ const ADMIN_CARDS = [
    footer:"Nobody can edit or delete entries", action:"Export",
    listLabel:"WHAT IS RECORDED",
    rows:[["Permission changes","41 this month"],["Employee access","118"],["Data exports","9"],
-     ["Integration changes","6"],["Agent actions","2,140"],["Deleted records","3"],["Admin changes","27"]]},
+     ["Integration changes","6"],["Agent actions","2,140"],["Claim and PO approvals","27"],["Admin changes","12"]]},
   {id:"datamgmt", group:"GOVERNANCE", title:"Data management", icon:"data", tint:"#5fe0a8",
-   blurb:"Import, export, restore and — carefully — delete.",
+   blurb:"Import, export, restore and, carefully, delete.",
    tags:["Backup 02:00","30-day restore"],
    footer:"Last backup completed 02:00 today", action:"Run backup",
    listLabel:"WHAT YOU CONTROL HERE",
-   rows:[["Import data","CSV, Sage, HubSpot"],["Export data","full or per module"],["Backup status","healthy · 02:00 daily"],
-     ["Restore previous versions","30 days available"],["Merge records","74 candidates"],
+   rows:[["Import data","CSV, LiveCosts, ServiceM8"],["Export data","full or per module"],["Backup status","healthy, 02:00 daily"],
+     ["Restore previous versions","30 days available"],["Merge records","9 candidates"],
      ["Data retention","7 years"],["Delete company data","requires two admins"]]},
 
   {id:"brand", group:"EXPERIENCE", title:"Branding", icon:"brand", tint:"var(--accent)",
    blurb:"Logo, accent colour, templates and how agents appear.",
-   tags:["Lime accent","2 templates"],
+   tags:["Teal-green accent","2 templates"],
    listLabel:"WHAT YOU CONTROL HERE",
-   rows:[["Company logo","kilbride-mark.svg"],["Pulse accent colour","oklch(0.86 0.19 118)"],
-     ["Email templates","3"],["Document templates","2"],["Agent appearance","12 faces · 6 shells"],
+   rows:[["Company logo","lavelle-mark.png"],["Pulse accent colour","Lavelle teal-green"],
+     ["Email templates","3"],["Document templates","claim valuation, quote"],["Agent appearance","12 faces, 6 shells"],
      ["Customer-facing portal branding","on", true]]},
   {id:"appearance", group:"EXPERIENCE", title:"Appearance & themes", icon:"brand", tint:"#6ad0f0",
    blurb:"Pick a light or dark theme for how Pulse looks to you.",
-   tags:["8 themes","4 dark","4 light"],
+   tags:[THEMES.length + " themes", THEMES.filter(t => t.group === "Dark").length + " dark", THEMES.filter(t => t.group === "Light").length + " light"],
    listLabel:"THEMES", rows:[]}
 ];
 
@@ -409,43 +530,44 @@ const ADMIN_GROUPS = [
   ["EXPERIENCE", "repeat(3,1fr)"]
 ];
 
+
 /* ---- activity feeds ---- */
-const SRC_TINT = {Gmail:"#f07a9d", Pulse:"var(--accent)", Sage:"#6ad0f0", WhatsApp:"#5fe0a8",
-  HubSpot:"#f0994b", Xero:"#8fa6ff", Agent:"var(--accent)"};
-const SRC_ABBR = {Gmail:"GM", Pulse:"PL", Sage:"SG", WhatsApp:"WA", HubSpot:"HS", Xero:"XR", Agent:"AI"};
+const SRC_TINT = {LiveCosts:"#f0c04b", Sync:"#6ad0f0", Xero:"#8fa6ff", Countfire:"#f0994b",
+  WhatsApp:"#5fe0a8", Email:"#f07a9d", Pulse:"var(--accent)", Agent:"var(--accent)"};
+const SRC_ABBR = {LiveCosts:"LC", Sync:"SY", Xero:"XR", Countfire:"CF", WhatsApp:"WA", Email:"EM", Pulse:"PL", Agent:"AI"};
 
 const DATA_EVENTS = [
-  ["New customer created","McKenna Transport was added from a web enquiry.","Web form","McKenna Transport","Pulse","completed"],
-  ["Invoice imported","INV-10512 for €3,240 arrived from Sage and matched to an open order.","Sage sync","Casey Builders","Sage","completed"],
-  ["Email received","Purchase order attached — parsed and filed against the account.","accounts@caseybuilders.ie","Casey Builders","Gmail","completed"],
-  ["File uploaded","Signed framework 2026.pdf — 6 pages indexed for Helios.","Aoife Nolan","Casey Builders","Pulse","completed"],
-  ["42 records imported","Nightly Sage sync brought in 42 invoice lines across 9 accounts.","Sage sync","9 organisations","Sage","completed"],
-  ["CRM record updated","Credit limit changed on the account after the August review.","HubSpot sync","Fitzgerald Heating","HubSpot","completed"],
-  ["Form submitted","Site survey request for a boiler replacement in Glanmire.","Web form","Ó Riain, Glanmire","Pulse","completed"],
-  ["WhatsApp message received","Photo of the meter reading filed against the visit.","Séamus Byrne","Ballincollig depot","WhatsApp","completed"],
-  ["External system synced","Xero connection retried and failed — token still expired.","Xero","148 invoices queued","Xero","failed"]
+  ["Clock records imported","Sync imported " + T.people + " employee clock records across seven sites.","Sync",T.people + " employees","Sync","completed"],
+  ["Estimate imported","Countfire take-off for Sandyford Office Campus: " + LV.SANDYFORD_PACKAGES.length + " packages, " + E(SANDYFORD.value) + ".",LV.COUNTFIRE.estimator,"Sandyford Office Campus","Countfire","completed"],
+  ["Payment confirmed","Xero confirmed " + E(APEX.amount) + " from Apex Fit-Out against " + APEX.no + " at 14:21.","Xero","Harbour Exchange","Xero","completed"],
+  ["Delivery received","Rexel lighting equipment on PO-4809 received at Harbour Exchange at 09:42.",HX.foreman,"Harbour Exchange","LiveCosts","completed"],
+  ["Purchase order synced",PO1.no + ", " + PO1.supplier + " " + low(PO1.item) + " for " + E(PO1.value) + ", pulled from LiveCosts.","LiveCosts",CP.name,"LiveCosts","completed"],
+  ["Supplier invoices updated","CastlePark now carries 71 supplier invoices in LiveCosts, ready to match against POs.","LiveCosts",CP.name,"LiveCosts","completed"],
+  ["Site photos filed","Block B containment photos from the Lavelle Projects group filed against CastlePark.",CP.foreman,CP.name,"WhatsApp","completed"],
+  ["Email received","Northbank acknowledged " + INV72.no + " and expects a Friday payment run.","accounts@northbankdevelopments.ie",KM.name,"Email","completed"],
+  ["Fuel transaction needs allocation",LV.eur2(D.exception) + " on card " + D.card + " at " + D.place + ", " + D.time + ".","Fuel card " + D.card,"Fleet","Pulse","awaiting"]
 ];
 
 const PEOPLE_EVENTS = [
-  ["Aoife approved a refund","€412 written off on INV-10233 after the parts dispute closed.","Aoife Nolan","Glanmire Mechanical","Pulse","completed"],
-  ["Tom changed a booking","Thursday's depot visit moved to 11:00 to fit the delivery window.","Tom Walsh","Ballincollig depot","Pulse","completed"],
-  ["Mac assigned a task","Lease decision handed to himself, due Thursday.","Martin Kilbride","Ballincollig depot","Pulse","completed"],
-  ["Finance uploaded a report","August month-end close workbook, nine sheets.","Aoife Nolan","Head office","Pulse","completed"],
-  ["Niamh edited customer details","Billing email corrected so reminders stop bouncing.","Niamh Cronin","Dunne & Sons Ltd","Pulse","completed"],
-  ["Séamus completed a visit","Warranty callback closed — parts ordered on the spot.","Séamus Byrne","Fitzgerald Heating","Pulse","completed"],
-  ["Purchase order raised","PO-4471 for €14,280 sent up for sign-off.","Aoife Nolan","Munster Plumbing","Pulse","awaiting"],
-  ["Credit limit increase requested","€10,000 to €18,000 — waiting on the second approval.","Niamh Cronin","Casey Builders","Pulse","awaiting"]
+  ["Kevin Byrne submitted site progress","CastlePark Block A and Block B progress by package, logged at " + LV.CASTLE_LAST_UPDATE.time + ".",LV.CASTLE_LAST_UPDATE.who,CP.name,"Pulse","completed"],
+  ["PO-4821 submitted",PO1.supplier + " " + low(PO1.item) + ", " + E(PO1.value) + ". Over €10,000, so it routed to Martin.",CP.pm,CP.name,"Pulse","awaiting"],
+  ["Daniel Walsh updated a take-off","Sandyford Office Campus re-measured in Countfire at " + LV.COUNTFIRE.updated + ".",LV.COUNTFIRE.estimator,"Sandyford Office Campus","Countfire","completed"],
+  ["Emma Doyle logged a call","Northbank confirmed " + INV72.no + " is going in Friday's payment run.","Emma Doyle","Northbank Developments","Pulse","completed"],
+  ["Conor Fahy submitted a claim","Harbour Exchange July claim, " + E(HX.july.amount) + ", submitted to " + HX.client + ".",HX.pm,HX.name,"Pulse","completed"],
+  ["Marty Byrne posted a site update","Block B level 2 access is open again. Two gangs back on containment tomorrow.",CP.foreman,CP.name,"WhatsApp","completed"],
+  ["Martin Lavelle approved PO-4818","Prysmian armoured cable for Block B, " + E(LV.POS.find(p => p.no === "PO-4818").value) + ".","Martin Lavelle",CP.name,"Pulse","completed"],
+  ["Rachel Byrne uploaded a certificate","Public liability insurance for 2026 filed under Certificates.","Rachel Byrne","Lavelle Electrical Group","Pulse","completed"]
 ];
 
 const AI_EVENTS = [
-  ["Finance Agent checked 143 invoices","Three accounts over their limit and €41.2k past 60 days.","Finance Agent","3 organisations","Agent","working"],
-  ["Sales Agent qualified a new lead","McKenna Transport scored 82/100 on company size, location and enquiry detail.","Sales Agent","McKenna Transport","HubSpot","working"],
-  ["Operations Agent updated a schedule","Van 04's jobs redistributed across two installers.","Operations Agent","Ballincollig depot","Agent","working"],
-  ["Helios prepared a report","Weekly management one-pager written and filed.","Helios","Management","Agent","working"],
-  ["Agent paused for approval","Chase email to Dunne & Sons drafted — needs your yes before it sends.","Finance Agent","Dunne & Sons Ltd","Agent","awaiting"],
-  ["Workflow failed","Certificate renewal reminder could not find a contact for Mallow yard.","Operations","Mallow yard","Agent","failed"],
-  ["Stock Watch raised order lines","Two lines below reorder point before Thursday's jobs.","Stock Watch","Munster Plumbing","Agent","working"],
-  ["Briefing Agent posted the morning brief","Two items needed you; the rest was noise.","Briefing Agent","Martin Kilbride","WhatsApp","completed"]
+  ["Ops Watchdog flagged a labour variance","CastlePark is " + HRS_VAR + " hours over this week's " + CP.budgetHrs + "-hour budget, on Block B containment.","Ops Watchdog",CP.name,"Agent","working"],
+  ["Claims Agent recalculated the July claim","CastlePark July claim now " + CLAIM + " across " + low(word(CLAIMED_PKGS.length)) + " packages, at 11:06.","Claims Agent",CP.name,"Agent","awaiting"],
+  ["Finance Agent matched a payment",E(APEX.amount) + " from Apex Fit-Out reconciled against " + APEX.no + ".","Finance Agent","Apex Fit-Out","Xero","completed"],
+  ["Fleet Agent raised a fuel exception","Card " + D.card + ", " + LV.eur2(D.exception) + " at " + D.time + ". Marked needs allocation.","Fleet Agent","Fuel card " + D.card,"Agent","awaiting"],
+  ["Procurement Agent spotted a price movement","Prysmian cable is up " + PRYSMIAN.trend + " on recent orders.","Procurement Agent","Prysmian","Agent","working"],
+  ["Commercial Agent checked tender deadlines",QUOTES_DUE.length + " quotes due this week, Sandyford first on " + (DAY[SANDYFORD.due] || SANDYFORD.due) + ".","Commercial Agent","Estimating","Agent","working"],
+  ["Project Agent read site progress","CastlePark " + CP.complete + "% against " + CP.programme + "% programme after the " + LV.CASTLE_LAST_UPDATE.time + " update.","Project Agent",CP.name,"Agent","working"],
+  ["Briefing posted the morning brief","Two items needed Martin. The rest was already handled.","Briefing","Martin Lavelle","Pulse","completed"]
 ];
 
 const STREAM_DEFS = [
@@ -457,10 +579,22 @@ const STREAM_DEFS = [
    tint:"var(--accent)", icon:"M2 12h4l2.5-6 3.5 12 3-8 2 2h5"}
 ];
 
+
+/* Grouped side rail. {section} entries are headers; PulseLogic keeps Home then Agents at the top. */
 const NAV = [
+  {section:"CORE"},
   {label:"Home", icon:"helios", page:"Home"},
   {label:"Agents", icon:"navAgents", page:"Agents"},
   {label:"Dashboard", icon:"navDash", page:"Dashboard", dot:true},
+  {section:"COMMERCIAL"},
+  {label:"Estimating", icon:"navEstimating", page:"Estimating"},
+  {label:"Projects", icon:"navProjects", page:"Projects"},
+  {label:"Claims & Finance", icon:"navClaims", page:"Claims"},
+  {section:"OPERATIONS"},
+  {label:"Workforce", icon:"navWorkforce", page:"Workforce"},
+  {label:"Procurement", icon:"navProcurement", page:"Procurement"},
+  {label:"Fleet & Diesel", icon:"navFleet", page:"Fleet"},
+  {section:"PLATFORM"},
   {label:"Work", icon:"navWork", page:"Work"},
   {label:"Records", icon:"navRecords", page:"Records"},
   {label:"Activity", icon:"pulseLine", page:"Activity", dot:true}
@@ -469,103 +603,167 @@ const NAV = [
 /* Inbox items follow the real InboxItem shape: what happened, why it matters, what I can do. */
 const ITEMS = {
   po:{kind:"Approval", importance:"high", icon:ICONS.approvals, age:"18m",
-    title:"Purchase order PO-4471 — €14,280",
-    why:"Raised by Aoife Nolan. €4,280 above your sign-off threshold, so it routed to you.",
-    detail:"Both lines are below reorder point and committed to Thursday's jobs. Pricing matches the June supplier agreement. Approving writes the decision as you and fires core.approval.updated.",
+    title:"Purchase order " + PO1.no + ", " + E(PO1.value),
+    why:"Raised by " + CP.pm + " for CastlePark " + low(PO1.item) + ". Over the €10,000 threshold, so it routed to you.",
+    detail:PO1.supplier + " containment for Block B, needed on site " + (DAY[PO1.due] || PO1.due) + ". " + word(AWAIT.length) + " POs worth " + E(AWAIT_VAL) + " are waiting on you in total. Approving writes the decision as you and commits it in LiveCosts.",
     actionLabel:"Approve", secondaryLabel:"Request changes", group:"Approvals",
-    fields:[{k:"Provider",v:"core.approvals"},{k:"Requested by",v:"Aoife Nolan"},{k:"Value",v:"€14,280"},{k:"Record",v:"PO-4471"}],
-    history:[{when:"Today 08:54",text:"Aoife Nolan raised the request"},{when:"Today 08:54",text:"Routed to Martin Kilbride — over threshold"}]},
-  sync:{kind:"Alert", importance:"critical", icon:ICONS.health, age:"6h",
-    title:"Xero sync failed — expired token",
-    why:"148 invoices have been queued since 02:14. Reconnecting posts them automatically.",
-    detail:"The refresh token was last authorised on 27 February. Third failure this year; moving the connection to the service account would stop it recurring. The dispatcher retried twice before dead-lettering.",
-    actionLabel:"Reconnect", secondaryLabel:"Snooze", group:"Alerts",
-    fields:[{k:"Provider",v:"core.notifications"},{k:"Integration",v:"Xero"},{k:"Queued",v:"148 invoices"},{k:"Event",v:"core.automation.failed"}],
-    history:[{when:"Today 02:14",text:"Sync failed — invalid_grant"},{when:"Today 02:16",text:"Retried twice, then dead-lettered"}]},
-  visit:{kind:"Task", importance:"high", icon:ICONS.visits, age:"2h",
-    title:"Site visit at Ballincollig depot is unassigned",
-    why:"Scheduled for tomorrow 09:00 with no installer against it.",
-    detail:"Contributed by the site-visits module through its own inbox provider. Core never learns what a visit is — it sorts by importance and age like everything else.",
-    actionLabel:"Assign installer", secondaryLabel:"Reschedule", group:"Work",
-    fields:[{k:"Provider",v:"site-visits.unassigned"},{k:"Entity",v:"site-visits.visit"},{k:"Scheduled",v:"Tomorrow 09:00"},{k:"Status",v:"scheduled"}],
-    history:[{when:"Yesterday 16:20",text:"Visit created by Tom Walsh"},{when:"Today 07:00",text:"Flagged unassigned by the briefing job"}]},
-  auto:{kind:"Alert", importance:"normal", icon:ICONS.autos, age:"3h",
-    title:"“Overdue reminder” skipped 4 contacts",
-    why:"Four organisations have no billing email, so the send step could not run.",
-    detail:"The automation ran at 08:00 and sent six of ten reminders. Each step is recorded in automation_run_steps with its input, output and error.",
-    actionLabel:"Fix the records", secondaryLabel:"Disable step", group:"Automations",
-    fields:[{k:"Automation",v:"Overdue invoice reminder"},{k:"Run",v:"partial"},{k:"Sent",v:"6 of 10"},{k:"Failed step",v:"notify.email"}],
-    history:[{when:"Today 08:00",text:"Run completed with warnings"},{when:"Yesterday 08:00",text:"Same 4 records skipped"}]},
-  task:{kind:"Task", importance:"normal", icon:ICONS.work, age:"Thu",
-    title:"Ballincollig lease renewal closes Thursday",
-    why:"No decision recorded against the contract and the notice period is 30 days.",
-    detail:"The lease runs to 31 October. Ballincollig carried 38% of counter revenue this year; rent is 4.1% of that.",
-    actionLabel:"Open record", secondaryLabel:"Assign", group:"Work",
-    fields:[{k:"Provider",v:"core.tasks"},{k:"Due",v:"Thu 27 Aug"},{k:"Assignee",v:"Martin Kilbride"},{k:"Priority",v:"high"}],
-    history:[{when:"18 Aug",text:"Task materialised from a recurring rule"},{when:"2 Feb",text:"Contract uploaded by Aoife Nolan"}]}
+    fields:[{k:"Supplier",v:PO1.supplier},{k:"Project",v:CP.name},{k:"Value",v:E(PO1.value)},{k:"Record",v:PO1.no}],
+    history:[{when:"Today 09:12",text:CP.pm + " raised the order in LiveCosts"},{when:"Today 09:12",text:"Routed to Martin Lavelle, over €10,000"}]},
+  claim:{kind:"Approval", importance:"high", icon:ICONS.navClaims, age:"11:06",
+    title:"CastlePark July claim, " + CLAIM,
+    why:"The Claims Agent recalculated it at 11:06 from " + CP.pm + "'s site progress. It needs your approval before it goes to " + CP.client + ".",
+    detail:word(CLAIMED_PKGS.length) + " packages claimed, led by " + TOP_PKGS.slice(0, 2).map(k => k.name + " at " + E(k.claim)).join(" and ") + ". Claimed to date becomes " + E(CP.claimed) + " on a " + E(CP.contract) + " contract. Approving raises " + INV84.no + " in Xero.",
+    actionLabel:"Approve claim", secondaryLabel:"Open claim builder", group:"Approvals",
+    fields:[{k:"Project",v:CP.name},{k:"Customer",v:CP.client},{k:"July claim",v:CLAIM},{k:"Stage",v:CP.july.status}],
+    history:[{when:"Today 11:06",text:"Claims Agent recalculated the claim"},{when:"Today 10:58",text:CP.pm + " updated package progress"}]},
+  labour:{kind:"Alert", importance:"high", icon:ICONS.health, age:"2h",
+    title:"Ringsend labour " + "+" + E(RL.variance) + " over allowance",
+    why:"Actual labour is " + E(RL.actual) + " against a monthly allowance of " + E(RL.allowance) + ". It needs " + RS.pm + "'s review.",
+    detail:LV.ISSUES.find(i => i.project === "ringsend").note + " The job still forecasts a " + P(RS.margin) + " margin, so this is a watch, not a loss yet.",
+    actionLabel:"Send to " + RS.pm, secondaryLabel:"Open Ringsend", group:"Alerts",
+    fields:[{k:"Project",v:RS.name},{k:"Allowance",v:E(RL.allowance)},{k:"Actual",v:E(RL.actual)},{k:"Forecast margin",v:P(RS.margin)}],
+    history:[{when:"Today 09:30",text:"Ops Watchdog flagged the variance"},{when:"Today 07:48",text:"Sync imported this week's clock records"}]},
+  diesel:{kind:"Task", importance:"normal", icon:ICONS.navFleet, age:"Today",
+    title:"Diesel needs allocation, " + E(D.unallocated),
+    why:word(UNALLOC_TXNS.length) + " fuel transactions have no project. One is card " + D.card + ", " + LV.eur2(D.exception) + " at " + D.place + " at " + D.time + ".",
+    detail:"October diesel is " + E(D.total) + ", up " + P(D.deltaPct) + " on September. Allocating these " + low(word(UNALLOC_TXNS.length)) + " clears the " + E(D.unallocated) + " and puts the cost on the right jobs.",
+    actionLabel:"Allocate", secondaryLabel:"Open Fleet", group:"Work",
+    fields:[{k:"Unallocated",v:E(D.unallocated)},{k:"Transactions",v:String(UNALLOC_TXNS.length)},{k:"Card",v:D.card},{k:"Status",v:"Needs allocation"}],
+    history:[{when:"Today",text:"Fleet Agent marked card " + D.card + " needs allocation"},{when:"Yesterday",text:"Four daytime fills arrived with no project code"}]},
+  inv:{kind:"Alert", importance:"high", icon:ICONS.inbox, age:"12d",
+    title:"Kimmage " + INV72.no + " is " + INV72.status,
+    why:E(INV72.amount) + " owed by " + INV72.client + " on the " + INV72.note + " for " + KM.name + ".",
+    detail:KIMMAGE_ISSUE.note + " The Finance Agent drafted a reminder and parked it. Sending is a write tool, so it waits for your yes.",
+    actionLabel:"Review chase", secondaryLabel:"Snooze to Friday", group:"Automations",
+    fields:[{k:"Invoice",v:INV72.no},{k:"Customer",v:INV72.client},{k:"Value",v:E(INV72.amount)},{k:"Due",v:INV72.due}],
+    history:[{when:"Today 09:00",text:"Chase overdue invoices drafted a reminder"},{when:"Yesterday",text:"Northbank acknowledged by email"}]}
 };
-const ORDER = ["sync","po","visit","auto","task"];
+const ORDER = ["claim","po","labour","inv","diesel"];
 
+/* ---- Pulse answers: every figure is read from lavelle.js ---- */
+const OPS_ROW = (o) => [o.name, E(o.value), o.due, o.est];
 const ANSWERS = {
-  credit:{tool:"core_search", effect:"read",
-    text:"Three organisations are over their agreed limit this morning, and €41.2k of the balance is past 60 days. Dunne & Sons is the one to act on: days-to-pay went from 12 to 74 since May while order volume held steady.",
-    cols:["Organisation","Balance","Over","Oldest"],
-    rows:[["Dunne & Sons","€28,410","€8,410","74d"],["Fitzgerald Heating","€9,240","€2,240","63d"],["Riverside Devs","€3,560","€560","61d"]],
-    actions:[["Draft chase emails",1],["Open Dunne & Sons",0]]},
-  jobs:{tool:"core_tasks_find", effect:"read",
-    text:"Eleven tasks are past their due date. Two slipped on Friday when Van 04 went off the road at Ballincollig; the other nine are waiting on stock. Ballincollig carries seven of the eleven, well above its usual share.",
-    cols:["Task","Subject","Late","Owner"],
-    rows:[["Boiler swap follow-up","Ó Riain, Glanmire","4d","S. Byrne"],["Bathroom fit sign-off","Casey Builders","3d","T. Walsh"],["Rad replace invoice","Kelleher, Cobh","2d","S. Byrne"]],
-    actions:[["Reassign the two van tasks",1],["Open Work → Overdue",0]]},
+  castlepark:{tool:"projects_read", effect:"read",
+    text:"CastlePark Manor is " + CP.complete + "% complete against " + CP.programme + "% programme progress. Cost to date is " + E(CP.cost) + " with a forecast margin of " + P(CP.margin) + ". The July claim is currently " + CLAIM + " and awaiting Martin's approval. Labour is " + P(HRS_PCT) + " above this month's allowance, primarily due to Block B containment. " + word(CASTLE_TOMORROW.length) + " material deliveries are due tomorrow.",
+    cols:["Measure","Value","Against","Note"],
+    rows:[["Progress",CP.complete + "%",CP.programme + "% programme","Block B containment behind"],
+      ["Cost to date",E(CP.cost),E(CP.committed) + " committed","Forecast final " + E(CP.forecastCost)],
+      ["July claim",CLAIM,E(CP.claimed) + " claimed to date","Awaiting Martin's approval"],
+      ["Labour this week",CP.weekHrs + " hrs",CP.budgetHrs + " hrs budget","+" + HRS_VAR + " hrs, " + P(HRS_PCT) + " over"]],
+    actions:[["Review the July claim",1],["Open CastlePark",0]]},
+  today:{tool:"core_briefing", effect:"read",
+    text:word(T.count) + " active projects, " + T.people + " people on site and " + EK(T.julyClaimed) + " claimed this month. The CastlePark July claim of " + CLAIM + " is ready for your approval. Ringsend labour is " + E(RL.variance) + " above the monthly allowance, but the job still forecasts " + P(RS.margin) + ". " + E(D.unallocated) + " of diesel is unallocated, " + AWAIT.length + " POs worth " + E(AWAIT_VAL) + " are waiting on you, and Kimmage " + INV72.no + " for " + E(INV72.amount) + " is " + INV72.status + ".",
+    cols:["Item","Value","Status","Owner"],
+    rows:[["CastlePark July claim",CLAIM,"Ready for approval","Martin Lavelle"],
+      ["Ringsend labour","+" + E(RL.variance),"PM review",RS.pm],
+      [AWAIT.length + " purchase orders",E(AWAIT_VAL),"Awaiting approval","Martin Lavelle"],
+      [INV72.no + ", Kimmage",E(INV72.amount),INV72.status,"Emma Doyle"],
+      ["Unallocated diesel",E(D.unallocated),"Needs allocation","Rachel Byrne"]],
+    actions:[["Approve the CastlePark claim",1],["Open Dashboard",0]]},
+  behind:{tool:"projects_find", effect:"read",
+    text:word(BEHIND.length) + " projects are behind programme, none by more than " + (BEHIND[0].programme - BEHIND[0].complete) + " points. " + BEHIND[0].name + " is furthest back at " + BEHIND[0].complete + "% against " + BEHIND[0].programme + "%, then " + BEHIND[1].name + " at " + BEHIND[1].complete + "% against " + BEHIND[1].programme + "%. CastlePark is " + CP.complete + "% against " + CP.programme + "%, with Block B containment the cause.",
+    cols:["Project","Complete","Programme","Gap"],
+    rows:BEHIND.map(p => [p.name, p.complete + "%", p.programme + "%", "−" + (p.programme - p.complete) + "pt"]),
+    actions:[["Open Projects",1],["Ask the Project Agent",0]]},
+  margin:{tool:"projects_cost_read", effect:"read",
+    text:"Most of this month's margin pressure is labour. Ringsend is " + E(RL.variance) + " above its labour allowance on switch room rework, and still forecasts " + P(RS.margin) + ". CastlePark is " + HRS_VAR + " hours over budget this week (" + P(HRS_PCT) + ") on Block B containment. On Clonskeagh, final fix devices are running " + CLONSKEAGH_ISSUE.note.match(/[\d.]+%/)[0] + " above allowance. Kimmage carries the thinnest forecast margin at " + P(KM.margin) + ".",
+    cols:["Project","Driver","Impact","Forecast margin"],
+    rows:[[RS.name,"Switch room rework","+" + E(RL.variance) + " labour",P(RS.margin)],
+      [CP.name,"Block B containment","+" + HRS_VAR + " hrs this week",P(CP.margin)],
+      [prjName("clonskeagh"),"Final fix materials",CLONSKEAGH_ISSUE.note.match(/[\d.]+%/)[0] + " over allowance",P(LV.PROJECT("clonskeagh").margin)],
+      [KM.name,"Lowest margin job","Watch",P(KM.margin)]],
+    actions:[["Send Ringsend to Kevin",1],["Open Projects",0]]},
+  spent:{tool:"projects_cost_read", effect:"read",
+    text:E(CP.cost) + " spent on CastlePark Manor to date: " + E(LV.CASTLE_COST_SPLIT.labour) + " labour, " + E(LV.CASTLE_COST_SPLIT.materials) + " materials and " + E(LV.CASTLE_COST_SPLIT.other) + " other. A further " + E(CP.openCommit) + " is committed on open POs, taking committed cost to " + E(CP.committed) + " against a " + E(CP.contract) + " contract. Forecast final cost is " + E(CP.forecastCost) + ".",
+    cols:["Cost","To date","Share","Source"],
+    rows:[["Labour",E(LV.CASTLE_COST_SPLIT.labour),P(LV.CASTLE_COST_SPLIT.labour / CP.cost * 100),"Sync and LiveCosts"],
+      ["Materials",E(LV.CASTLE_COST_SPLIT.materials),P(LV.CASTLE_COST_SPLIT.materials / CP.cost * 100),"LiveCosts"],
+      ["Other",E(LV.CASTLE_COST_SPLIT.other),P(LV.CASTLE_COST_SPLIT.other / CP.cost * 100),"LiveCosts"],
+      ["Open commitments",E(CP.openCommit),"on order","LiveCosts POs"]],
+    actions:[["Open CastlePark costs",1],["Show POs",0]]},
+  claim:{tool:"claims_read", effect:"read",
+    text:"You can claim " + CLAIM + " on CastlePark for July across " + low(word(CLAIMED_PKGS.length)) + " packages. " + TOP_PKGS[0].name + " and " + TOP_PKGS[1].name + " carry most of it at " + E(TOP_PKGS[0].claim) + " and " + E(TOP_PKGS[1].claim) + ". " + CLAIM_PKGS.filter(k => k.claim === 0).map(k => k.name).join(", ") + " has nothing new to claim this month. The Claims Agent recalculated it at 11:06 from " + CP.pm + "'s site progress.",
+    cols:["Package","Complete","Value","July claim"],
+    rows:CLAIMED_PKGS.map(k => [k.name, P(k.pct), E(k.value), E(k.claim)]).concat([["Total","","",CLAIM]]),
+    actions:[["Approve the claim",1],["Open the claim builder",0]]},
+  crew:{tool:"workforce_read", effect:"read",
+    text:word(RS_CREW.length) + " people are on site at " + RS.name + " today, with " + RS.foreman + " as foreman. " + word(RS_SUBS) + (RS_SUBS === 1 ? " is a subcontractor" : " are subcontractors") + ". All clocked in through Sync this morning.",
+    cols:["Name","Role","Hours","Site"],
+    rows:RS_CREW.map(e => [e.name, e.role, e.hours.toFixed(1) + " h", RS.short]),
+    actions:[["Open Workforce",1],["Show Ringsend labour",0]]},
+  diesel:{tool:"fleet_read", effect:"read",
+    text:E(D.total) + " of diesel in " + D.month + ", up " + P(D.deltaPct) + " on September. " + E(DIESEL_ALLOC) + " is allocated across " + low(word(LV.DIESEL_BY_PROJECT.length)) + " projects, led by CastlePark at " + E(LV.DIESEL_BY_PROJECT[0][1]) + ". " + E(D.unallocated) + " is unallocated, including " + LV.eur2(D.exception) + " on fuel card " + D.card + " at " + D.place + " at " + D.time + ", which needs allocation.",
+    cols:["Project","Diesel","Share","Note"],
+    rows:LV.DIESEL_BY_PROJECT.map(d => [prjName(d[0]), E(d[1]), P(d[1] / D.total * 100), ""])
+      .concat([["Unallocated",E(D.unallocated),P(D.unallocated / D.total * 100),"Needs allocation"],["Total",E(D.total),"100%",""]]),
+    actions:[["Allocate the " + E(D.unallocated),1],["Open Fleet",0]]},
+  overdue:{tool:"invoices_find", effect:"read",
+    text:word(OVERDUE.length) + " invoice is overdue: " + INV72.no + " to " + INV72.client + " for " + KM.name + ", " + E(INV72.amount) + ", " + INV72.status + ". " + KIMMAGE_ISSUE.note + " Everything else on the ledger is within terms.",
+    cols:["Invoice","Customer","Amount","Status"],
+    rows:OPEN_INV.map(i => [i.no, i.client, E(i.amount), i.status]),
+    actions:[["Draft a chase to Northbank",1],["Open Claims & Finance",0]]},
+  pos:{tool:"procurement_find", effect:"read",
+    text:word(AWAIT.length) + " purchase orders worth " + E(AWAIT_VAL) + " are waiting on you. " + PO1.no + " from " + PO1.supplier + " for CastlePark " + low(PO1.item) + " is the largest at " + E(PO1.value) + " and is needed on site " + (DAY[PO1.due] || PO1.due) + ".",
+    cols:["PO","Supplier","Project","Value"],
+    rows:AWAIT.map(p => [p.no, p.supplier, LV.PROJECT(p.project).short, E(p.value)]),
+    actions:[["Approve " + PO1.no,1],["Open Procurement",0]]},
+  labour:{tool:"workforce_hours_read", effect:"read",
+    text:"Across the " + low(word(LIVE_LABOUR.length)) + " live sites this week: " + N(LIVE_HRS) + " hours against " + N(LIVE_BUDGET) + " budgeted, " + (LIVE_HRS - LIVE_BUDGET) + " over. Ringsend (+" + LV.LABOUR_BY_PROJECT.find(l => l.id === "ringsend").variance + ") and CastlePark (+" + HRS_VAR + ") account for nearly all of it. Harbour Exchange is " + Math.abs(LV.LABOUR_BY_PROJECT.find(l => l.id === "harbour").variance) + " hours under.",
+    cols:["Project","Actual","Budget","Variance"],
+    rows:LIVE_LABOUR.map(l => [l.name, l.hours + " h", l.budget + " h", signed(l.variance) + " h"]),
+    actions:[["Open Workforce",1],["Send Ringsend to Kevin",0]]},
+  residential:{tool:"projects_cost_read", effect:"read",
+    text:"Residential contracts forecast a " + P(RESI_MARGIN) + " gross margin, contract-weighted across " + low(word(RESI.length)) + " projects worth " + EK(RESI_CONTRACT) + ". " + RESI.slice().sort((a, b) => b.margin - a.margin).map(p => p.short + " " + P(p.margin)).join(", ") + ". Kimmage is the one to watch.",
+    cols:["Project","Contract","Forecast GP","Margin"],
+    rows:RESI.map(p => [p.name, E(p.contract), E(p.forecastGP), P(p.margin)]),
+    actions:[["Open Projects",1],["Compare with commercial",0]]},
   chase:{tool:"core_email_draft", effect:"write", confirm:true,
-    confirmSummary:"Send one chase email to accounts@dunneandsons.ie referencing INV-10428 (€28,410, 74 days), offering two instalments to 30 September.",
-    text:"Drafted. This is a write tool, so I have not sent it — the proposal is stored with a hash of the exact arguments, and confirming replays those stored arguments rather than anything from your yes.",
+    confirmSummary:"Send one email to accounts@northbankdevelopments.ie referencing " + INV72.no + " (" + E(INV72.amount) + ", " + KM.name + " " + INV72.note + ", " + INV72.status + "), asking them to confirm Friday's payment run.",
+    text:"Drafted. This is a write tool, so I have not sent it. The proposal is stored with the exact arguments, and confirming sends those arguments rather than anything in your reply.",
     actions:[["Confirm and send",1],["Edit draft",0]]},
   sync:{tool:"core_operations_health", effect:"read",
-    text:"The Xero connection failed at 02:14 with an expired refresh token — last authorised 27 February. Nothing was lost: 148 invoices are queued and post once reconnected. This is the third token failure this year, so it is worth moving the connection to the service account.",
-    actions:[["Open System health",1],["Assign to Aoife",0]]},
-  visits:{tool:"site_visits_find", effect:"read",
-    text:"Four site visits are booked this week and one has no installer against it. That tool is contributed by the site-visits module, not core — installing the module is what gave me the ability to answer this.",
-    cols:["Visit","Organisation","When","Status"],
-    rows:[["Boiler service","Casey Builders","Wed 09:00","scheduled"],["Survey","Ó Riain","Wed 14:00","scheduled"],["Depot check","Ballincollig","Thu 09:00","unassigned"]],
-    actions:[["Assign the unassigned visit",1],["Open Site visits",0]]},
+    text:"All seven connections are healthy. Xero synced two minutes ago and confirmed the " + E(APEX.amount) + " payment from Apex Fit-Out at 14:21. LiveCosts, Countfire, Sync, ServiceM8 and Microsoft 365 are connected. WhatsApp runs as a modelled flow for the Lavelle Projects group in this demo.",
+    cols:["Connection","Status","Last sync","Direction"],
+    rows:INTEGRATIONS.map(i => [i.name, i.status, i.lastSync, i.scopes.length ? i.scopes.join(", ") : "Demo"]),
+    actions:[["Open Integrations",1],["Show Xero activity",0]]},
   fallback:{tool:"core_search", effect:"read",
-    text:"I can answer that from the records you have access to. Everything I reach goes through a registered tool with a declared permission — there is no SQL tool — and a record you may not see comes back as not found rather than forbidden.",
-    actions:[["Show me what you can do",0]]}
+    text:"I can answer that from the projects, claims, invoices and records you have access to. Try CastlePark, claims, labour, diesel, POs or overdue invoices. Everything I reach goes through a registered tool with a declared permission, and a record you may not see comes back as not found.",
+    actions:[["What's happening across the business today?",0]]}
 };
+/* Aliases kept for older readers of the original keys. */
+ANSWERS.credit = ANSWERS.overdue;
+ANSWERS.jobs = ANSWERS.behind;
+ANSWERS.visits = ANSWERS.crew;
 
-// Turns a plain-English filter name into a full dashboard area — the "primitive
-// vibe-coding" bit: no real backend, just a seeded generator so the same phrase
-// always produces the same numbers, with direction and vocabulary nudged by
-// keywords in the text (expansion/growth trends up, risk/issue trends down, a
-// region/cost/people/ops/customer word picks which metrics show).
+// Turns a plain-English filter name into a full dashboard area. No real backend,
+// just a seeded generator so the same phrase always produces the same numbers,
+// with direction and vocabulary nudged by keywords in the text.
 function synthesizeCustomArea(name){
   const trimmed = (name || "").trim();
   if (!trimmed) return null;
   let seed = 0;
   for (let i = 0; i < trimmed.length; i++) seed = (seed * 31 + trimmed.charCodeAt(i)) >>> 0;
   const rnd = (n) => (((seed >>> (n % 24)) ^ (seed << ((n * 7) % 13))) >>> 0) % 997 / 997;
-  const low = trimmed.toLowerCase();
-  const has = (...words) => words.some(w => low.indexOf(w) > -1);
-  const growth = has("expansion","growth","launch","scale","pilot","new site","open","opening","grow");
-  const risk = has("risk","issue","delay","problem","complaint","fault","incident","churn","decline");
+  const lower = trimmed.toLowerCase();
+  const has = (...words) => words.some(w => lower.indexOf(w) > -1);
+  const growth = has("expansion","growth","launch","scale","pilot","new site","tender","won","grow");
+  const risk = has("risk","issue","delay","snag","defect","variance","overrun","slip","late");
   const dir = risk ? -1 : (growth ? 1 : (rnd(2) > 0.45 ? 1 : -1));
 
   let vocab = "generic";
-  if (has("scotland","ireland","wales","england","region","dublin","belfast","cork","galway","london","glasgow","edinburgh"))
-    vocab = "region";
-  else if (has("cost","spend","budget","saving","margin")) vocab = "cost";
-  else if (has("staff","hiring","team","recruit","headcount")) vocab = "people";
-  else if (has("supplier","stock","inventory","warehouse","fleet")) vocab = "ops";
-  else if (has("customer","client","retention","account")) vocab = "customer";
+  if (has("dublin","galway","region","site","sites","block")) vocab = "region";
+  else if (has("cost","spend","budget","saving","margin","diesel","fuel")) vocab = "cost";
+  else if (has("staff","hiring","team","labour","electrician","subcontractor","headcount")) vocab = "people";
+  else if (has("supplier","materials","cable","delivery","fleet","van")) vocab = "ops";
+  else if (has("customer","client","contractor","developer")) vocab = "customer";
 
   const V = {
-    region:   {labels:["New enquiries","Orders won","Revenue","Site coverage"], unit:"EUR — 30 DAYS"},
-    cost:     {labels:["Spend","Cost per job","Savings found","Budget used"], unit:"EUR — 30 DAYS"},
-    people:   {labels:["Headcount","Open roles","Time to hire","Retention"], unit:"PEOPLE"},
-    ops:      {labels:["Stock cover","Lead time","Stockouts","Reorders raised"], unit:"DAYS"},
-    customer: {labels:["Active accounts","Repeat rate","Churn","NPS"], unit:"ACCOUNTS"},
-    generic:  {labels:["Volume","Rate","Cost","Coverage"], unit:"ACTIVITY — 30 DAYS"}
+    region:   {labels:["Live projects","Claims raised","Contract value","Sites active"], unit:"EUR, 30 DAYS"},
+    cost:     {labels:["Spend","Cost per project","Savings found","Budget used"], unit:"EUR, 30 DAYS"},
+    people:   {labels:["Headcount","Hours on site","Overtime","Utilisation"], unit:"PEOPLE"},
+    ops:      {labels:["Deliveries","Lead time","Late deliveries","POs raised"], unit:"DAYS"},
+    customer: {labels:["Active customers","Repeat work","Overdue","Win rate"], unit:"CUSTOMERS"},
+    generic:  {labels:["Volume","Rate","Cost","Coverage"], unit:"ACTIVITY, 30 DAYS"}
   }[vocab];
 
   const months = ["Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug"];
@@ -579,284 +777,343 @@ function synthesizeCustomArea(name){
     const pct = 2 + Math.round(rnd(i + 9) * 18);
     const up = dir > 0 ? rnd(i + 12) > 0.25 : rnd(i + 12) > 0.7;
     const bars = [0,1,2,3,4,5,6,7,8].map(k => 0.3 + rnd(i * 3 + k) * 0.7);
-    return [label, i === 1 ? pct + "%" : String(val), (up ? "+" : "\u2212") + pct + (i === 1 ? "pt" : "%"), up ? "up" : "down", "vs last month", bars];
+    return [label, i === 1 ? pct + "%" : String(val), (up ? "+" : "−") + pct + (i === 1 ? "pt" : "%"), up ? "up" : "down", "vs last month", bars];
   });
   const capName = trimmed.replace(/\b\w/g, c => c.toUpperCase());
   const split = [
-    [capName + " \u2014 direct", String(Math.round(v0 * 0.5)), "48%", 1],
-    ["Existing pipeline", String(Math.round(v0 * 0.3)), "31%", 0],
+    [capName + ", direct", String(Math.round(v0 * 0.5)), "48%", 1],
+    ["Existing projects", String(Math.round(v0 * 0.3)), "31%", 0],
     ["Everything else", String(Math.round(v0 * 0.2)), "21%", 0]
   ];
-  const table = [1,2,3].map(w => [capName + " \u2014 week " + w, String(20 + Math.floor(rnd(20 + w) * 200)),
-    (dir > 0 ? "+" : "\u2212") + (3 + Math.floor(rnd(23 + w) * 14)) + "%", "Auto-tagged from records mentioning \u201c" + low + "\u201d"]);
-  table.push(["Everything else", String(20 + Math.floor(rnd(30) * 200)), "\u2014", "Baseline"]);
+  const table = [1,2,3].map(w => [capName + ", week " + w, String(20 + Math.floor(rnd(20 + w) * 200)),
+    (dir > 0 ? "+" : "−") + (3 + Math.floor(rnd(23 + w) * 14)) + "%", "Auto-tagged from records mentioning “" + lower + "”"]);
+  table.push(["Everything else", String(20 + Math.floor(rnd(30) * 200)), "0%", "Baseline"]);
   return {
     id: trimmed, label: capName, color: "var(--accent)", owner: "CUSTOM FILTER",
-    description: "Generated from \u201c" + trimmed + "\u201d \u2014 a plain-English filter, not a registered metric set. Refine it and Pulse will tighten this up.",
+    description: "Generated from “" + trimmed + "”: a plain-English filter, not a registered metric set. Refine it and Pulse will tighten this up.",
     kind: "columns", chartTitle: capName + " over time", chartUnit: V.unit,
-    chart, splitTitle: "Where \u201c" + low + "\u201d shows up", split,
+    chart, splitTitle: "Where “" + lower + "” shows up", split,
     tableCols: ["Item","Value","Change","Note"], table,
-    metrics, legend: [capName, "Pipeline", "Other"]
+    metrics, legend: [capName, "Projects", "Other"]
   };
 }
 
 function pickAnswer(q){
   const s = q.toLowerCase();
-  if (/visit|site visit|installer/.test(s)) return ANSWERS.visits;
-  if (/chase|email|draft|send/.test(s)) return ANSWERS.chase;
-  if (/credit|limit|debtor|owe|outstanding|dunne/.test(s)) return ANSWERS.credit;
-  if (/task|late|overdue|slip|work/.test(s)) return ANSWERS.jobs;
-  if (/sync|xero|integration|token|fail|broke|health/.test(s)) return ANSWERS.sync;
+  const castle = /castle ?park/.test(s);
+  if (/chase|draft|email|remind/.test(s)) return ANSWERS.chase;
+  if (/business today|across the business|happening today|today.*business|morning briefing|briefing|what needs me/.test(s)) return ANSWERS.today;
+  if (/diesel|fuel|card 0087|0087|fleet|\bvans?\b/.test(s)) return ANSWERS.diesel;
+  if (castle && /claim|valuation|invoice/.test(s)) return ANSWERS.claim;
+  if (castle && /spent|spend|cost|how much/.test(s)) return ANSWERS.spent;
+  if (castle) return ANSWERS.castlepark;
+  if (/claim|valuation/.test(s)) return ANSWERS.claim;
+  if (/who is|who's|whos|working at|on site at|crew|foreman/.test(s)) return ANSWERS.crew;
+  if (/overdue|debtor|owe|outstanding|inv-1072|kimmage|northbank|\binvoices?\b/.test(s)) return ANSWERS.overdue;
+  if (/\bpos?\b|purchase order|po-48|approve|approval/.test(s)) return ANSWERS.pos;
+  if (/behind|programme|program|slipping|late|delay/.test(s)) return ANSWERS.behind;
+  if (/residential|housing|apartments/.test(s)) return ANSWERS.residential;
+  if (/margin|losing|lost|leak|profit/.test(s)) return ANSWERS.margin;
+  if (/labour|labor|hours|budget|timesheet|ringsend/.test(s)) return ANSWERS.labour;
+  if (/sync|xero|integration|connect|livecosts|countfire|servicem8|health/.test(s)) return ANSWERS.sync;
   return ANSWERS.fallback;
 }
 
 const ORGS = [
-  ["Dunne & Sons Ltd","Customer","€28,410","74 days","on stop"],
-  ["Casey Builders","Customer","€6,120","12 days","active"],
-  ["Fitzgerald Heating","Customer","€9,240","63 days","watch"],
-  ["Munster Plumbing Supplies","Supplier","—","—","active"],
-  ["Riverside Developments","Customer","€3,560","61 days","watch"],
-  ["Glanmire Mechanical","Customer","€1,180","8 days","active"]
+  ["Kellett Construction","Customer",E(INV84.amount),"Not yet due","active"],
+  ["Northbank Developments","Customer",E(LV.sum(OPEN_INV.filter(i => i.client === "Northbank Developments"), i => i.amount)),parseInt(INV72.status, 10) + " days","watch"],
+  ["Eastpoint Engineering","Customer",E(LV.sum(OPEN_INV.filter(i => i.client === "Eastpoint Engineering"), i => i.amount)),"Within terms","active"],
+  ["Apex Fit-Out","Customer",E(LV.sum(OPEN_INV.filter(i => i.client === "Apex Fit-Out"), i => i.amount)),"Within terms","active"],
+  ["Harbour Developments","Customer","€0","Paid up","active"],
+  ["CEF","Supplier","n/a","n/a","active"]
 ];
 const TEAMS = [
-  ["Accounts","3 members","Aoife Nolan","core:approval:decide"],
-  ["Installers","9 members","Séamus Byrne","core:task:update"],
-  ["Trade counter","6 members","Niamh Cronin","core:person:view"],
-  ["Management","2 members","Martin Kilbride","all core permissions"]
+  ["Management","1 member","Martin Lavelle","all core permissions"],
+  ["Projects","3 members","Kevin Byrne","core:project:update"],
+  ["Estimating","2 members","Daniel Walsh","core:quote:update"],
+  ["Accounts","1 member","Emma Doyle","core:invoice:update"],
+  ["Administration","1 member","Rachel Byrne","core:record:update"],
+  ["Electricians","27 members","Marty Byrne","core:task:update"],
+  ["Small Works","5 members","Tadhg Walsh","core:task:update"]
 ];
 const LOCATIONS = [
-  ["Head office","Little Island, Cork","14 staff","active"],
-  ["Ballincollig depot","Ballincollig, Cork","14 staff","lease review"],
-  ["Mallow yard","Mallow, Cork","4 staff","active"]
+  ["Dublin","Head office and yard","34 staff","active"],
+  ["Galway","Western office","6 staff","active"]
 ];
 
 const AGENT_DEFS = [
-  {id:"close", name:"Month-end close", shape:"rim-capsule", tint:"#1b2430", state:"working", group:true,
-   members:["credit","briefing","ops"], role:"Credit Control, Briefing and Ops Watchdog working the same close",
-   when:"09:12", preview:"credit control: three accounts still open.",
+  {id:"briefing", name:"Briefing", shape:"crown-pebble", tint:"#191c1f", state:"complete",
+   role:"Reads the whole business every morning and tells Martin the two things that matter",
+   when:"07:02", preview:"two things need you: the CastlePark claim and " + PO1.no + ".",
    thread:[
-     {kind:"stamp", text:"Today 09:04"},
-     {kind:"routine", text:"Ran routine", routine:"Month-end close"},
-     {kind:"agent", from:"credit", text:"three accounts are still open on the August ledger. Dunne & Sons is the only one that changed behaviour rather than just running late."},
-     {kind:"agent", from:"ops", text:"nothing technical is holding it up — the Xero token is back and all 148 queued invoices posted at 09:02."},
-     {kind:"agent", from:"briefing", text:"so the close is one decision, not three: what to do about Dunne. everything else reconciles."},
-     {kind:"user", text:"instalments, two payments to end of september"},
-     {kind:"agent", from:"credit", text:"drafted on those terms and parked it. sending is a write tool, so it waits for your yes."},
-     {kind:"agent", from:"briefing", text:"once that goes, August closes. i'll put the confirmation in tomorrow's briefing."}
-   ]},
-  {id:"briefing", name:"Briefing", shape:"crown-pebble", tint:"#191c1f", state:"complete", role:"Reads the whole business every morning and tells you the two things that matter",
-   when:"08:02", preview:"three things moved overnight. two need you.",
-   thread:[
-     {kind:"stamp", text:"Today 08:00"},
+     {kind:"stamp", text:"Today 07:00"},
      {kind:"routine", text:"Ran routine", routine:"Morning briefing"},
      {kind:"agent", text:"morning briefing:", lines:[
-       {k:"Cash", v:"€41.2k past 60 days · Dunne & Sons is 74 days"},
-       {k:"Work", v:"11 tasks late · 7 of them at Ballincollig"},
-       {k:"Approvals", v:"PO-4471 sitting with you since 08:54"}]},
-     {kind:"agent", text:"two things need you today: the purchase order, and a yes/no on the Ballincollig lease. everything else is covered."},
-     {kind:"user", text:"put the lease on Thursday"},
-     {kind:"agent", text:"done — task created against Ballincollig depot, due Thursday, assigned to you. i'll remind you Wednesday afternoon."}
+       {k:"Projects", v:T.count + " live, " + T.people + " on site, CastlePark " + CP.complete + "% against " + CP.programme + "% programme"},
+       {k:"Money", v:EK(T.julyClaimed) + " claimed this month, " + INV72.no + " " + INV72.status},
+       {k:"Approvals", v:"CastlePark July claim " + CLAIM + ", " + AWAIT.length + " POs worth " + E(AWAIT_VAL)}]},
+     {kind:"agent", text:"two things need you today: the CastlePark July claim and " + PO1.no + " for the Block B containment. everything else is covered."},
+     {kind:"user", text:"what's going on at ringsend"},
+     {kind:"agent", text:"labour is " + E(RL.variance) + " above the monthly allowance, mostly switch room rework. the job still forecasts " + P(RS.margin) + ", so " + RS.pm + " is reviewing it rather than it being a margin problem yet."}
    ]},
-  {id:"credit", name:"Credit Control", shape:"executive-capsule", tint:"#2a2118", state:"waiting", role:"Watches payment behaviour and drafts the chase before you ask",
-   when:"Yesterday", preview:"three drafts parked. nothing sent.",
+  {id:"watchdog", name:"Ops Watchdog", shape:"shield", tint:"#2b1b1e", state:"attention",
+   role:"Watches labour over budget, missing site updates, unusual fuel, late deliveries, missing allocations and slipping projects",
+   when:"15:30", preview:"ringsend labour over allowance. card " + D.card + " needs allocation.",
    thread:[
-     {kind:"stamp", text:"Yesterday 16:40"},
-     {kind:"agent", text:"three accounts changed behaviour this week. i've drafted a chase for each and parked them — sending is a write tool, so they wait for you."},
-     {kind:"user", text:"what changed on dunne"},
-     {kind:"agent", text:"days-to-pay went 12 → 74 since May while order volume held steady. that pattern is a cash problem, not a dispute. i'd offer two instalments to 30 September before putting them on stop again."}
+     {kind:"stamp", text:"Today 15:30"},
+     {kind:"agent", text:"afternoon sweep:", lines:[
+       {k:"Labour", v:"Ringsend +" + E(RL.variance) + " over allowance, CastlePark +" + HRS_VAR + " hrs this week"},
+       {k:"Fuel", v:"card " + D.card + ", " + LV.eur2(D.exception) + " at " + D.place + ", " + D.time + ", needs allocation"},
+       {k:"Site updates", v:"CastlePark updated at " + LV.CASTLE_LAST_UPDATE.time + " by " + LV.CASTLE_LAST_UPDATE.who},
+       {k:"Deliveries", v:"Tamlite luminaires for CastlePark due Thu, worth a chase"}]},
+     {kind:"user", text:"who was on card " + D.card},
+     {kind:"agent", text:LV.FUEL_TXNS[0].who + "'s van, " + LV.FUEL_TXNS[0].reg + ". it's outside normal hours, so i've marked it needs allocation rather than guessing a project. Rachel can allocate it in one tap."}
    ]},
-  {id:"visits", name:"Visit Scout", shape:"low-dome", tint:"#241b2e", state:"working", role:"Keeps the site-visit board honest and chases unassigned work",
-   when:"Yesterday", preview:"thursday's depot check still has nobody on it.",
+  {id:"commercial", name:"Commercial Agent", shape:"executive-capsule", tint:"#2a2118", state:"working",
+   role:"Tracks tenders, estimates, quotes, win rates and deadlines",
+   when:LV.COUNTFIRE.updated, preview:QUOTES_DUE.length + " quotes due this week. Sandyford take-off imported.",
    thread:[
-     {kind:"stamp", text:"Yesterday 07:00"},
-     {kind:"agent", text:"four visits booked this week, one unassigned: Thursday 09:00 depot stock check. Séamus is the only installer free that morning."},
-     {kind:"user", text:"give it to séamus"},
-     {kind:"agent", text:"assigned. the module fired site-visits.visit.updated and the escalation automation stood down."}
+     {kind:"stamp", text:"Today " + LV.COUNTFIRE.updated},
+     {kind:"agent", text:"tender board:", lines:[
+       {k:"Due this week", v:QUOTES_DUE.length + " quotes: " + QUOTES_DUE.map(o => o.name.split(" ").slice(0, 2).join(" ") + " " + o.due).join(", ")},
+       {k:"Pipeline", v:EK(PIPELINE) + " across " + LV.OPPS.length + " opportunities"},
+       {k:"Win rate", v:WIN_RATE + "%"}]},
+     {kind:"user", text:"is sandyford ready"},
+     {kind:"agent", text:"the Countfire take-off came in at " + LV.COUNTFIRE.updated + " from " + LV.COUNTFIRE.estimator + ": " + LV.SANDYFORD_PACKAGES.length + " packages, " + E(SANDYFORD.value) + " quoted. it's due " + (DAY[SANDYFORD.due] || SANDYFORD.due) + " and needs your sign-off before it goes to " + SANDYFORD.client + "."}
    ]},
-  {id:"stock", name:"Stock Watch", shape:"control-cube", tint:"#16241f", state:"thinking", role:"Reorder points, supplier lead times and what Thursday's jobs actually need",
-   when:"Mon", preview:"two lines below reorder point before thursday.",
+  {id:"project", name:"Project Agent", shape:"low-dome", tint:"#1b2430", state:"working",
+   role:"Follows progress, risk and programme on every live project",
+   when:LV.CASTLE_LAST_UPDATE.time, preview:"CastlePark " + CP.complete + "% against " + CP.programme + "%. Block B containment behind.",
    thread:[
-     {kind:"stamp", text:"Monday 11:20"},
-     {kind:"agent", text:"two lines drop below reorder point before Thursday's jobs. Munster can cover both at the June agreement price — that's what PO-4471 is."}
+     {kind:"stamp", text:"Today " + LV.CASTLE_LAST_UPDATE.time},
+     {kind:"agent", text:LV.CASTLE_LAST_UPDATE.who + " submitted CastlePark progress:", lines:LV.CASTLE_BLOCKS.map(b => ({k:b.block,
+       v:b.work ? b.work.map(w => w[0] + " " + w[1] + "%").join(", ") : "not started"}))},
+     {kind:"agent", text:"overall that's " + CP.complete + "% against " + CP.programme + "% programme. " + CASTLE_ISSUES.length + " open issues: " + CASTLE_ISSUES.map(i => i.title).join("; ") + "."},
+     {kind:"user", text:"will block b catch up"},
+     {kind:"agent", text:"Block B is the only thing behind. the armoured cable for it, PO-4818, lands tomorrow, and that's what unblocks the next two gangs."}
    ]},
-  {id:"ops", name:"Ops Watchdog", shape:"shield", tint:"#2b1b1e", state:"attention", role:"Sits on the event queue and tells you when something stopped working",
-   when:"02:16", preview:"xero token expired. 148 invoices queued, nothing lost.",
+  {id:"claims", name:"Claims Agent", shape:"control-cube", tint:"#16241f", state:"waiting",
+   role:"Builds the monthly claim draft for each project from site progress",
+   when:"11:06", preview:"July claim recalculated to " + CLAIM + ". waiting on Martin.",
    thread:[
-     {kind:"stamp", text:"Today 02:16"},
-     {kind:"agent", text:"the Xero connection failed at 02:14 — invalid_grant, token last authorised 27 February. 148 invoices are queued and post on reconnect. third time this year; move it to the service account."}
+     {kind:"stamp", text:"Today 11:06"},
+     {kind:"routine", text:"Ran routine", routine:"Monthly claim draft"},
+     {kind:"agent", text:"recalculated the CastlePark July claim from " + CP.pm + "'s progress: " + CLAIM + " across " + low(word(CLAIMED_PKGS.length)) + " packages.",
+      lines:TOP_PKGS.slice(0, 3).map(k => ({k:k.name, v:E(k.claim) + " at " + P(k.pct)}))},
+     {kind:"agent", text:"it's ready for your approval. once approved it goes to " + CP.client + " as " + INV84.no + " and Xero picks it up."},
+     {kind:"user", text:"why is distribution zero"},
+     {kind:"agent", text:"Distribution & Security is at " + P(LV.CASTLE_PACKAGES[7].pct, 2) + ", the same as June, so there's nothing new to claim on it this month."}
    ]},
-  {id:"counter", name:"Counter Assistant", shape:"offset-pebble", tint:"#191c1f", state:"working", role:"Answers trade-counter questions on price, stock and account status",
-   when:"Fri", preview:"14 questions answered, 2 handed to niamh.",
+  {id:"finance", name:"Finance Agent", shape:"rim-capsule", tint:"#241b2e", state:"complete",
+   role:"Watches invoices, Xero payments and debtors",
+   when:"14:21", preview:E(APEX.amount) + " from Apex Fit-Out confirmed in Xero.",
    thread:[
-     {kind:"stamp", text:"Friday 17:30"},
-     {kind:"agent", text:"14 counter questions answered this week. two went to Niamh: both were credit-limit calls, which i won't make on my own."}
+     {kind:"stamp", text:"Today 14:21"},
+     {kind:"agent", text:"Xero confirmed " + E(APEX.amount) + " from Apex Fit-Out against " + APEX.no + " for Harbour Exchange.", lines:[
+       {k:"Overdue", v:INV72.no + ", Northbank, " + E(INV72.amount) + ", " + INV72.status},
+       {k:"Outstanding", v:E(OUTSTANDING) + " across " + OPEN_INV.length + " invoices"}]},
+     {kind:"user", text:"chase northbank"},
+     {kind:"agent", text:"drafted a reminder to Northbank accounts for " + INV72.no + " and parked it. they've acknowledged it and expect a Friday payment run, so it's a nudge, not a hard chase. sending waits for your yes."}
+   ]},
+  {id:"procurement", name:"Procurement Agent", shape:"offset-pebble", tint:"#2a2118", state:"thinking",
+   role:"Follows POs, suppliers, delivery dates and price movement",
+   when:"12:30", preview:AWAIT.length + " POs worth " + E(AWAIT_VAL) + " waiting. Prysmian " + PRYSMIAN.trend + ".",
+   thread:[
+     {kind:"stamp", text:"Today 12:30"},
+     {kind:"agent", text:"purchasing:", lines:[
+       {k:"Awaiting", v:AWAIT.map(p => p.no + " " + p.supplier + " " + E(p.value)).join(", ")},
+       {k:"Deliveries", v:LV.DELIVERIES.filter(d => d.when === "Tomorrow").map(d => d.supplier).join(", ") + " tomorrow"},
+       {k:"Prices", v:"Prysmian " + PRYSMIAN.trend + ", Kellihers " + LV.SUPPLIERS.find(s => s.name === "Kellihers").trend}]},
+     {kind:"agent", text:PO1.no + " is the one to clear: the containment is for Block B and the gangs need it " + (DAY[PO1.due] || PO1.due) + "."}
+   ]},
+  {id:"fleet", name:"Fleet Agent", shape:"tall-unit", tint:"#16241f", state:"waiting",
+   role:"Allocates diesel to projects and spots fuel card exceptions",
+   when:"Today", preview:E(D.unallocated) + " of diesel unallocated. card " + D.card + " needs allocation.",
+   thread:[
+     {kind:"stamp", text:"Today 08:10"},
+     {kind:"agent", text:D.month + " diesel:", lines:[
+       {k:D.month, v:E(D.total) + ", up " + P(D.deltaPct) + " on September"},
+       {k:"Unallocated", v:E(D.unallocated) + " across " + UNALLOC_TXNS.length + " transactions"},
+       {k:"Exception", v:"card " + D.card + ", " + LV.eur2(D.exception) + ", " + D.place + " " + D.time}]},
+     {kind:"agent", text:"card " + D.card + " is the only fill outside normal hours, so it's marked needs allocation. the other " + low(word(UNALLOC_TXNS.length - 1)) + " are daytime fills with no project code. allocating all " + low(word(UNALLOC_TXNS.length)) + " clears the " + E(D.unallocated) + "."}
    ]}
 ];
 
 const KPI_DEFS = {
-  revenue:{label:"Revenue", value:"€412,800", delta:"+6.2%", dir:"up", hint:"30 days", hero:true},
-  cash:{label:"Cash collected", value:"€368,140", delta:"+4.1%", dir:"up", hint:"30 days"},
-  overdue:{label:"Overdue debt", value:"€41,200", delta:"+€8,410", dir:"down", hint:"60 days+"},
-  margin:{label:"Gross margin", value:"31.4%", delta:"−0.6pt", dir:"down", hint:"vs last month"},
-  jobs:{label:"Jobs completed", value:"126", delta:"+4", dir:"up", hint:"30 days"},
-  nps:{label:"Repeat rate", value:"68%", delta:"+3pt", dir:"up", hint:"customers ordering again"},
-  pipeline:{label:"Open pipeline", value:"€212,400", delta:"+11%", dir:"up", hint:"quoted, not won"},
-  utilisation:{label:"Installer hours", value:"84%", delta:"−2pt", dir:"down", hint:"billable share"}
+  contract:{label:"Live contract value", value:EK(T.contract), delta:T.count + " projects", dir:"up", hint:"active contracts", hero:true},
+  claimed:{label:"Claimed this month", value:EK(T.julyClaimed), delta:"+" + P(CLAIM_DELTA), dir:"up", hint:"vs last month"},
+  margin:{label:"Forecast gross margin", value:P(T.margin), delta:EK(T.forecastGP) + " GP", dir:"up", hint:"contract-weighted"},
+  people:{label:"People on site", value:String(T.people), delta:CP.staff + " at CastlePark", dir:"up", hint:"from Sync, today"},
+  issues:{label:"Open issues", value:String(LV.ISSUES.length), delta:CASTLE_ISSUES.length + " at CastlePark", dir:"down", hint:"site and commercial"},
+  unalloc:{label:"Unallocated costs", value:E(T.unallocated), delta:E(D.unallocated) + " diesel", dir:"down", hint:"no project code"},
+  projects:{label:"Active projects", value:String(T.count), delta:BEHIND.length + " behind programme", dir:"down", hint:"Dublin and Galway"},
+  cash:{label:"Cash collected", value:EK(LV.CASH_YTD), delta:"−" + P(Math.abs(CASH_DELTA)), dir:CASH_DELTA >= 0 ? "up" : "down", hint:"year to date"},
+  revenue:{label:"Revenue", value:EK(LV.REVENUE_YTD), delta:"+" + P(CLAIM_DELTA), dir:"up", hint:"claimed, year to date"},
+  overdue:{label:"Overdue debt", value:E(OVERDUE_VAL), delta:OVERDUE.length + " invoice", dir:"down", hint:INV72.no + ", " + INV72.status},
+  jobs:{label:"July claims", value:String(LV.PROJECTS.length), delta:LV.PROJECTS.filter(p => /Certified|Paid|Invoice/.test(p.july.status)).length + " certified or paid", dir:"up", hint:"one per live project"},
+  nps:{label:"Quote win rate", value:WIN_RATE + "%", delta:QUOTES_DUE.length + " due this week", dir:"up", hint:"tenders won"},
+  pipeline:{label:"Open pipeline", value:EK(PIPELINE), delta:LV.OPPS.length + " opportunities", dir:"up", hint:"estimating and quoted"},
+  utilisation:{label:"Labour utilisation", value:P(UTIL, 0), delta:"Fri " + LV.UTILISATION[4][1] + "%", dir:"down", hint:"billable share, this week"}
 };
 
+/* The old dashboard areas are replaced by the module system. These five stay so
+   any remaining reader renders real Lavelle data rather than crashing. */
+const BARS = (vals) => { const m = Math.max.apply(null, vals); return vals.map(v => +(v / m).toFixed(2)); };
+const SECTOR_SPLIT = LV.SECTORS.map((s, i) => {
+  const c = LV.sum(LV.PROJECTS.filter(p => p.sector === s), p => p.contract);
+  return [s, EK(c), P(c / T.contract * 100, 0), i === 0 ? 1 : 0];
+});
+const STAGE = (st) => LV.OPPS.filter(o => st.indexOf(o.stage) > -1);
 const ASPECT_DEFS = [
-  {id:"sales", label:"Sales", color:"var(--accent)", owner:"NIAMH CRONIN", description:"Counter, trade accounts and quotes out the door.",
-   kind:"columns", chartTitle:"Revenue by month", chartUnit:"EUR",
-   chart:[["Sep",288,"€0k"],["Oct",301,"€0k"],["Nov",352,"€0k"],["Dec",376,"€0k"],["Jan",268,"€0k"],["Feb",294,"€0k"],["Mar",318,"€0k"],["Apr",341,"€0k"],["May",362,"€0k"],["Jun",384,"€0k"],["Jul",398,"€0k"],["Aug",413,"€0k"]],
-   splitTitle:"Where it came from",
-   split:[["Trade counter","€214.6k","72%",1],["Contract accounts","€156.8k","53%",0],["Online orders","€41.4k","18%",0]],
-   tableCols:["Account","Revenue","Change","Owner"],
-   table:[["Casey Builders","€48,210","+12.4%","Niamh Cronin"],["Dunne & Sons Ltd","€28,410","−18.2%","Aoife Nolan"],["Fitzgerald Heating","€21,860","+4.1%","Niamh Cronin"],["Riverside Developments","€18,240","+9.6%","Tom Walsh"]],
-   metrics:[["Revenue","€412,800","+6.2%","up","30 days",[.4,.55,.44,.62,.5,.7,.6,.78,1]],
-     ["Orders","318","+22","up","30 days",[.5,.6,.44,.7,.55,.75,.62,.8,.9]],
-     ["Average order","€1,298","+1.8%","up","vs last month",[.6,.58,.62,.6,.66,.64,.7,.68,.74]],
-     ["Quotes won","41%","−3pt","down","conversion",[.7,.66,.7,.6,.62,.55,.58,.5,.48]]]},
-  {id:"development", label:"Development", color:"#9fd6f0", owner:"TOM WALSH", description:"Modules shipped into the client build and what they contributed.",
-   kind:"rows", rows:[["approval routing","412 runs",412],["overdue reminder","308 runs",308],["visit escalation","286 runs",286],["xero sync","198 runs",198],["briefing job","80 runs",80]], chartTitle:"Runs by automation", chartUnit:"RUNS · 30 DAYS",
-   chart:[["Sep",620,"620"],["Oct",684,"684"],["Nov",712,"712"],["Dec",760,"760"],["Jan",802,"802"],["Feb",864,"864"],["Mar",918,"918"],["Apr",986,"986"],["May",1042,"1042"],["Jun",1128,"1128"],["Jul",1204,"1204"],["Aug",1284,"1284"]],
-   splitTitle:"Runs by module",
-   split:[["core","1,042","81%",1],["site-visits","198","15%",0],["ui-showcase","44","4%",0]],
-   tableCols:["Module","Version","Contributions","State"],
-   table:[["core","0.1.0","31 routes · 21 events","always installed"],["site-visits","1.0.0","1 entity · 2 tools","installed"],["ui-showcase","0.1.0","3 pages","installed"],["wholesale","—","6 entities · 9 tools","available"]],
-   metrics:[["Modules live","3","+1","up","this quarter",[.2,.2,.4,.4,.4,.6,.6,.6,1]],
-     ["Helios tools","11","+2","up","registered",[.4,.44,.5,.5,.6,.6,.7,.8,.9]],
-     ["Automation runs","1,284","+9%","up","30 days",[.5,.55,.6,.58,.66,.7,.72,.8,.86]],
-     ["Failure rate","0.9%","−0.4pt","up","of all runs",[.8,.74,.7,.62,.6,.5,.44,.4,.32]]]},
-  {id:"marketing", label:"Marketing", color:"#e6c78a", owner:"AOIFE NOLAN", description:"Reach, enquiries and what turned into an account.",
-   kind:"funnel", funnel:[["Enquiries","184","—",184],["Quoted","96","52% of enquiries",96],["Won","39","41% of quotes",39],["Repeat order","12","31% of wins",12]], chartTitle:"Enquiry to repeat order", chartUnit:"CONVERSION",
-   chart:[["Sep",96,"96"],["Oct",104,"104"],["Nov",88,"88"],["Dec",112,"112"],["Jan",124,"124"],["Feb",118,"118"],["Mar",136,"136"],["Apr",142,"142"],["May",151,"151"],["Jun",164,"164"],["Jul",172,"172"],["Aug",184,"184"]],
-   splitTitle:"Where they came from",
-   split:[["Referral","78","42%",1],["Search","61","33%",0],["Trade shows","29","16%",0],["Direct","16","9%",0]],
-   tableCols:["Channel","Enquiries","Change","Cost each"],
-   table:[["Referral","78","+18.2%","€0.00"],["Search","61","+9.4%","€24.60"],["Trade shows","29","−6.1%","€41.20"],["Direct","16","+2.0%","€0.00"]],
-   metrics:[["Enquiries","184","+31","up","30 days",[.3,.4,.36,.5,.46,.6,.58,.7,.86]],
-     ["New accounts","12","+4","up","opened",[.2,.3,.24,.4,.36,.5,.44,.6,.7]],
-     ["Cost per enquiry","€18.40","−€2.10","up","blended",[.8,.76,.7,.66,.6,.56,.5,.46,.4]],
-     ["Repeat rate","68%","+3pt","up","ordering again",[.5,.54,.58,.56,.62,.64,.66,.7,.74]]]},
-  {id:"operations", label:"Operations", color:"#dcded6", owner:"SÉAMUS BYRNE", description:"Installers, vans, site visits and the work queue.",
-   kind:"stacked", legend:["Head office","Ballincollig depot","Mallow yard"], stacked:[["Sep",[34,28,9]],["Oct",[36,30,9]],["Nov",[39,32,10]],["Dec",[37,31,10]],["Jan",[32,27,8]],["Feb",[35,29,9]],["Mar",[40,33,10]],["Apr",[43,35,11]],["May",[46,37,12]],["Jun",[49,39,12]],["Jul",[52,42,13]],["Aug",[64,48,14]]], chartTitle:"Jobs completed by month", chartUnit:"JOBS",
-   chart:[["Sep",88,"88"],["Oct",94,"94"],["Nov",102,"102"],["Dec",96,"96"],["Jan",84,"84"],["Feb",91,"91"],["Mar",104,"104"],["Apr",112,"112"],["May",118,"118"],["Jun",121,"121"],["Jul",124,"124"],["Aug",126,"126"]],
-   splitTitle:"By location",
-   split:[["Head office","64","51%",1],["Ballincollig depot","48","38%",0],["Mallow yard","14","11%",0]],
-   tableCols:["Installer","Jobs","On time","Location"],
-   table:[["Séamus Byrne","41","94%","Ballincollig"],["Tom Walsh","34","88%","Head office"],["Niamh Cronin","28","96%","Head office"],["Unassigned","4","—","Ballincollig"]],
-   metrics:[["Jobs completed","126","+4","up","30 days",[.5,.6,.5,.66,.6,.7,.66,.76,.84]],
-     ["Overdue tasks","11","+3","down","past due",[.3,.36,.3,.44,.4,.5,.56,.7,.85]],
-     ["Visits completed","38","+11%","up","30 days",[.4,.5,.6,.5,.66,.6,.72,.8,.9]],
-     ["Installer hours","84%","−2pt","down","billable",[.8,.78,.8,.76,.78,.74,.76,.72,.7]]]},
-  {id:"finance", label:"Finance", color:"#7fd8a4", owner:"AOIFE NOLAN", description:"Cash in, debt ageing and margin after cost.",
+  {id:"executive", label:"Executive", color:"var(--accent)", owner:"MARTIN LAVELLE", description:"The whole business: contract value, claims, margin and people on site.",
+   kind:"columns", chartTitle:"Claimed by month", chartUnit:"EUR",
+   chart:LV.MONTHS.map((m, i) => [m, CT[i], "€" + CT[i] + "k"]),
+   splitTitle:"Contract value by sector", split:SECTOR_SPLIT,
+   tableCols:["Project","Contract","Margin","PM"],
+   table:LV.PROJECTS.slice().sort((a, b) => b.contract - a.contract).slice(0, 4).map(p => [p.name, E(p.contract), P(p.margin), p.pm]),
+   metrics:[["Live contract value",EK(T.contract),T.count + " projects","up","active",BARS(CT)],
+     ["Claimed this month",EK(T.julyClaimed),"+" + P(CLAIM_DELTA),"up","vs last month",BARS(CT)],
+     ["Forecast margin",P(T.margin),EK(T.forecastGP) + " GP","up","contract-weighted",[.7,.72,.7,.74,.72,.76,.74,.78,.8]],
+     ["People on site",String(T.people),CP.staff + " at CastlePark","up","today",BARS(LV.UTILISATION.map(u => u[1]))]]},
+  {id:"projects", label:"Projects", color:"#9fd6f0", owner:"KEVIN BYRNE", description:"Progress against programme on every live project.",
+   kind:"rows", rows:LV.PROJECTS.slice(0, 5).map(p => [p.short, p.complete + "% of " + p.programme + "%", p.complete]),
+   chartTitle:"Labour hours this week", chartUnit:"HOURS",
+   chart:LIVE_LABOUR.map(l => [l.name, l.hours, String(l.hours)]),
+   splitTitle:"Project health",
+   split:["Green","Amber"].map((h, i) => [h, String(LV.PROJECTS.filter(p => p.health === h).length), P(LV.PROJECTS.filter(p => p.health === h).length / T.count * 100, 0), i === 0 ? 1 : 0]),
+   tableCols:["Project","Complete","Gap","PM"],
+   table:BEHIND.slice(0, 4).map(p => [p.name, p.complete + "%", "−" + (p.programme - p.complete) + "pt", p.pm]),
+   metrics:[["Active projects",String(T.count),BEHIND.length + " behind","down","programme",BARS(LV.PROJECTS.map(p => p.complete))],
+     ["CastlePark",CP.complete + "%","−" + (CP.programme - CP.complete) + "pt","down","vs programme",BARS(LV.CASTLE_PACKAGES.map(k => k.pct))],
+     ["Open issues",String(LV.ISSUES.length),CASTLE_ISSUES.length + " CastlePark","down","site and commercial",[.4,.5,.4,.6,.5,.6,.7,.6,.7]],
+     ["Hours vs budget",N(LIVE_HRS),"+" + (LIVE_HRS - LIVE_BUDGET) + " h","down","this week",BARS(LIVE_LABOUR.map(l => l.hours))]]},
+  {id:"commercial", label:"Commercial", color:"#e6c78a", owner:"DANIEL WALSH", description:"Tenders, take-offs and quotes on the way to a win.",
+   kind:"funnel",
+   funnel:[["Opportunities",String(LV.OPPS.length),"in the pipeline",LV.OPPS.length],
+     ["Taken off",String(STAGE(["Take-off","Estimating","Quote Issued"]).length),"measured in Countfire",STAGE(["Take-off","Estimating","Quote Issued"]).length],
+     ["Priced",String(STAGE(["Estimating","Quote Issued"]).length),"estimating or quoted",STAGE(["Estimating","Quote Issued"]).length],
+     ["Quote issued",String(STAGE(["Quote Issued"]).length),"waiting on the client",STAGE(["Quote Issued"]).length]],
+   chartTitle:"Pipeline by stage", chartUnit:"EUR",
+   chart:["Qualifying","Take-off","Estimating","Quote Issued"].map(st => { const v = Math.round(LV.sum(STAGE([st]), o => o.value) / 1000); return [st, v, "€" + v + "k"]; }),
+   splitTitle:"Pipeline by sector",
+   split:LV.SECTORS.filter(s => s !== "Small Works").map((s, i) => { const v = LV.sum(LV.OPPS.filter(o => o.sector === s), o => o.value); return [s, EK(v), P(v / PIPELINE * 100, 0), i === 0 ? 1 : 0]; }),
+   tableCols:["Tender","Value","Due","Estimator"],
+   table:QUOTES_DUE.map(OPS_ROW),
+   metrics:[["Open pipeline",EK(PIPELINE),LV.OPPS.length + " opportunities","up","quoted and estimating",[.4,.5,.46,.6,.55,.66,.7,.76,.86]],
+     ["Quotes due",String(QUOTES_DUE.length),"this week","up","deadlines",[.3,.4,.5,.4,.6,.5,.7,.6,.8]],
+     ["Win rate",WIN_RATE + "%","tenders won","up","rolling",[.5,.48,.52,.5,.54,.52,.56,.55,.58]],
+     ["Sandyford",EK(SANDYFORD.value),"due " + SANDYFORD.due,"up","Countfire " + LV.COUNTFIRE.updated,BARS(LV.SANDYFORD_PACKAGES.map(p => p.value))]]},
+  {id:"operations", label:"Operations", color:"#dcded6", owner:"RACHEL BYRNE", description:"People on site, hours against budget and the fleet.",
+   kind:"stacked", legend:["Within budget","Over budget","Unused budget"],
+   stacked:LIVE_LABOUR.filter(l => l.hours >= 100).map(l => [l.name, [Math.min(l.hours, l.budget), Math.max(0, l.hours - l.budget), Math.max(0, l.budget - l.hours)]]),
+   chartTitle:"Labour utilisation by day", chartUnit:"%",
+   chart:LV.UTILISATION.map(u => [u[0], u[1], u[1] + "%"]),
+   splitTitle:"People on site today",
+   split:LV.TODAY_SITES.map((s, i) => [s[0], String(s[1]), P(s[1] / T.people * 100, 0), i === 0 ? 1 : 0]),
+   tableCols:["Site","People","Hours vs budget","Foreman"],
+   table:["castlepark","ringsend","harbour","kimmage"].map(id => { const p = LV.PROJECT(id); return [p.name, String(p.staff), signed(p.weekHrs - p.budgetHrs) + " h", p.foreman]; }),
+   metrics:[["People on site",String(T.people),"7 sites","up","today",BARS(LV.TODAY_SITES.map(s => s[1]))],
+     ["Hours vs budget","+" + (LIVE_HRS - LIVE_BUDGET) + " h",P((LIVE_HRS - LIVE_BUDGET) / LIVE_BUDGET * 100),"down","this week",BARS(LIVE_LABOUR.map(l => l.hours))],
+     ["Diesel, " + D.month,E(D.total),"+" + P(D.deltaPct),"down","vs September",BARS(LV.DIESEL_BY_PROJECT.map(d => d[1]))],
+     ["Utilisation",P(UTIL, 0),"Fri " + LV.UTILISATION[4][1] + "%","down","billable",BARS(LV.UTILISATION.map(u => u[1]))]]},
+  {id:"finance", label:"Finance", color:"#7fd8a4", owner:"EMMA DOYLE", description:"Cash in, receivables and what is overdue.",
    kind:"area", chartTitle:"Cash collected by month", chartUnit:"EUR",
-   chart:[["Sep",252,"€0k"],["Oct",268,"€0k"],["Nov",296,"€0k"],["Dec",318,"€0k"],["Jan",246,"€0k"],["Feb",264,"€0k"],["Mar",288,"€0k"],["Apr",306,"€0k"],["May",324,"€0k"],["Jun",342,"€0k"],["Jul",358,"€0k"],["Aug",368,"€0k"]],
-   splitTitle:"Debt by age",
-   split:[["0–30 days","€184.2k","61%",1],["31–60 days","€82.4k","27%",0],["61–90 days","€28.6k","9%",0],["90 days plus","€12.6k","4%",0]],
-   tableCols:["Account","Balance","Change","Oldest"],
-   table:[["Dunne & Sons Ltd","€28,410","+42.0%","74 days"],["Fitzgerald Heating","€9,240","+11.2%","63 days"],["Riverside Developments","€3,560","−4.4%","61 days"],["Glanmire Mechanical","€1,180","−22.0%","8 days"]],
-   metrics:[["Cash collected","€368,140","+4.1%","up","30 days",[.5,.56,.5,.62,.58,.68,.66,.74,.8]],
-     ["Overdue debt","€41,200","+€8,410","down","60 days plus",[.3,.34,.4,.38,.46,.5,.6,.7,.84]],
-     ["Gross margin","31.4%","−0.6pt","down","vs last month",[.7,.72,.7,.68,.68,.66,.64,.62,.6]],
-     ["Days to pay","38","+6","down","weighted",[.4,.44,.42,.5,.52,.6,.62,.7,.76]]]},
-  {id:"support", label:"Support", color:"#e2705c", owner:"NIAMH CRONIN", description:"Callbacks, warranty work and what came back twice.",
-   kind:"dots", target:12, targetLabel:"Target: 12 callbacks a month or fewer", chartTitle:"Callbacks by month", chartUnit:"COUNT",
-   chart:[["Sep",18,"18"],["Oct",16,"16"],["Nov",21,"21"],["Dec",19,"19"],["Jan",24,"24"],["Feb",22,"22"],["Mar",17,"17"],["Apr",15,"15"],["May",14,"14"],["Jun",12,"12"],["Jul",9,"9"],["Aug",7,"7"]],
-   splitTitle:"By cause",
-   split:[["Install fault","3","43%",1],["Part failure","2","29%",0],["User error","2","28%",0]],
-   tableCols:["Site","Callbacks","First-visit fix","Cost"],
-   table:[["Ó Riain, Glanmire","2","50%","€840"],["Casey Builders","2","100%","€410"],["Fitzgerald Heating","2","100%","€1,240"],["Kelleher, Cobh","1","100%","€650"]],
-   metrics:[["Open callbacks","7","−2","up","live",[.6,.58,.54,.5,.48,.44,.4,.38,.34]],
-     ["First-visit fix","82%","+4pt","up","of callbacks",[.5,.54,.56,.6,.6,.66,.7,.74,.8]],
-     ["Warranty cost","€3,140","−€420","up","30 days",[.7,.66,.62,.6,.54,.5,.46,.44,.4]],
-     ["Repeat faults","3","−1","up","same site",[.5,.5,.46,.4,.4,.36,.3,.3,.26]]]}
+   chart:LV.MONTHS.map((m, i) => [m, CA[i], "€" + CA[i] + "k"]),
+   splitTitle:"Receivables by status",
+   split:[["Within terms",EK(OUTSTANDING - OVERDUE_VAL),P((OUTSTANDING - OVERDUE_VAL) / OUTSTANDING * 100, 0),1],
+     ["Overdue",EK(OVERDUE_VAL),P(OVERDUE_VAL / OUTSTANDING * 100, 0),0]],
+   tableCols:["Invoice","Amount","Days","Customer"],
+   table:OPEN_INV.map(i => [i.no, E(i.amount), /overdue/i.test(i.status) ? "−" + parseInt(i.status, 10) + " days" : "Due " + i.due, i.client]),
+   metrics:[["Cash collected",EK(LV.CASH_YTD),"−" + P(Math.abs(CASH_DELTA)),"down","last month",BARS(CA)],
+     ["Outstanding",EK(OUTSTANDING),OPEN_INV.length + " invoices","up","excluding July CastlePark",[.5,.56,.5,.62,.58,.68,.66,.74,.8]],
+     ["Overdue",E(OVERDUE_VAL),OVERDUE.length + " invoice","down","Kimmage",[.3,.34,.4,.38,.46,.5,.6,.7,.84]],
+     ["Paid today",E(APEX.amount),"Apex Fit-Out","up","Xero 14:21",[.4,.44,.42,.5,.52,.6,.62,.7,.9]]]}
 ];
 
 const FILTER_GROUPS = [
-  {title:"AREA", items:["Sales","Development","Marketing","Operations","Finance","Support"]},
-  {title:"SPINE", items:["Location","Team","Person","Organisation","Module"]},
+  {title:"AREA", items:ASPECT_DEFS.map(a => a.label)},
+  {title:"SPINE", items:["Project","Customer","Site","Employee","Supplier"]},
   {title:"TIME", items:["This week","This month","This quarter","Year to date"]}
 ];
 
 const OPS_DEFS = [
-  {id:"o1", name:"Weekly management report", kind:"report", owner:"Chief of Staff", ownerKind:"agent", initials:"CS",
-   trigger:"Mon, 08:00", triggerKind:"schedule", next:"3 days", last:"Sent to 4 people", status:"healthy", rate:98, on:true,
-   what:"Pulls last week's numbers from every area, writes the commentary and sends one page to the management team before Monday's meeting.",
-   why:"The meeting used to start with twenty minutes of people reading numbers off their own screens.",
+  {id:"o1", name:"Weekly management report", kind:"report", owner:"Briefing", ownerKind:"agent", initials:"BR",
+   trigger:"Mon, 07:30", triggerKind:"schedule", next:"3 days", last:"Sent to 4 people", status:"healthy", rate:98, on:true,
+   what:"Pulls last week's numbers from every project, writes the commentary and sends one page to Martin and the project managers before Monday's meeting.",
+   why:"The meeting used to start with twenty minutes of people reading LiveCosts off their own screens.",
    saved:"6 hours a month",
-   steps:[["Trigger","Every Monday at 08:00"],["Find","Last week's metrics across all six areas"],["Check","Flag anything moving more than 10%"],["Draft","Write the one-page commentary"],["Send","Email the management team"],["Update","File the report against the week"]],
-   runs:[["Mon 08:00","1m 12s","ok","4 recipients","€0.04"],["Mon 25 Aug 08:00","1m 04s","ok","4 recipients","€0.04"],["Mon 18 Aug 08:00","58s","ok","4 recipients","€0.03"]]},
-  {id:"o2", name:"Chase unpaid invoices", kind:"automation", owner:"Finance Agent", ownerKind:"agent", initials:"FA",
-   trigger:"Daily, 09:00", triggerKind:"schedule", next:"Tomorrow", last:"3 drafts waiting", status:"approval", rate:94, on:true,
-   what:"Finds invoices past 14 days, excludes anything disputed, drafts a reminder in your tone and parks it for the finance manager.",
-   why:"Chasing was happening in bursts, so the oldest debt got the least attention.",
-   saved:"11 hours a month",
-   steps:[["Trigger","Every weekday at 09:00"],["Find","Unpaid invoices older than 14 days"],["Check","Exclude disputed invoices"],["Draft","Create personalised reminders"],["Approval","Finance manager reviews","gate"],["Send","Email the customer"],["Update","Record the activity in Pulse"]],
-   runs:[["Today 09:00","42s","partial","3 of 7 drafted","€0.02","4 organisations have no billing email"],["Yesterday 09:00","51s","ok","6 sent","€0.03"],["Mon 09:00","47s","ok","5 sent","€0.03"]]},
-  {id:"o3", name:"New enquiry follow-up", kind:"automation", owner:"Sales Agent", ownerKind:"agent", initials:"SA",
-   trigger:"New lead created", triggerKind:"event", next:"Event-based", last:"11 followed up today", status:"healthy", rate:99, on:true,
-   what:"Answers a new enquiry within minutes, asks the two questions the counter always needs, and creates the quote task.",
-   why:"Enquiries arriving after 5pm were sitting until the next morning.",
+   steps:[["Trigger","Every Monday at 07:30"],["Find","Last week's progress, cost and labour by project"],["Check","Flag anything moving more than 10%"],["Draft","Write the one-page commentary"],["Send","Email Martin and the project managers"],["Update","File the report against the week"]],
+   runs:[["Mon 07:30","1m 12s","ok","4 recipients","€0.04"],["Mon 07:30","1m 04s","ok","4 recipients","€0.04"],["Mon 07:30","58s","ok","4 recipients","€0.03"]]},
+  {id:"o2", name:"Monthly claim draft from site progress", kind:"automation", owner:"Claims Agent", ownerKind:"agent", initials:"CA",
+   trigger:"Month end, 09:00", triggerKind:"schedule", next:"Today", last:CLAIM + " waiting on Martin", status:"approval", rate:97, on:true,
+   what:"Reads each project's package progress, works out value times percent complete less what was claimed before, and builds the claim draft for approval.",
+   why:"Claims were built in a spreadsheet the night before they were due, and packages got missed.",
    saved:"14 hours a month",
-   steps:[["Trigger","A lead is created in Pulse"],["Find","Match against existing organisations"],["Draft","Write the first reply"],["Send","Email the enquiry"],["Update","Create a quote task for the counter"]],
-   runs:[["Today 16:20","6s","ok","1 lead","€0.01"],["Today 15:02","7s","ok","1 lead","€0.01"],["Today 11:48","6s","ok","1 lead","€0.01"]]},
-  {id:"o4", name:"Certificate renewal reminder", kind:"routine", owner:"Operations", ownerKind:"person", initials:"TW",
-   trigger:"60 days before expiry", triggerKind:"event", next:"14:20", last:"Failed — missing contact", status:"failed", rate:71, on:true,
-   what:"Watches every installer certificate and insurance document, and gives sixty days' notice before one lapses.",
-   why:"A lapsed certificate stopped two jobs last year.",
-   saved:"3 hours a month",
-   steps:[["Trigger","60 days before a document expires"],["Find","The owner of the certificate"],["Check","Has a renewal already been booked?"],["Send","Notify the owner and Operations"],["Update","Create the renewal task"]],
-   runs:[["Today 14:20","3s","failed","0 of 2","€0.00","No contact on file for Mallow yard"],["Yesterday 14:20","4s","failed","0 of 1","€0.00","No contact on file for Mallow yard"],["Fri 14:20","5s","ok","1 notified","€0.01"]]},
-  {id:"o5", name:"Morning briefing", kind:"routine", owner:"Briefing Agent", ownerKind:"agent", initials:"BR",
-   trigger:"Weekdays, 07:00", triggerKind:"schedule", next:"Tomorrow", last:"Delivered 07:02", status:"healthy", rate:100, on:true,
-   what:"Reads the whole business overnight and tells you the two things that actually need you.",
-   why:"You were opening six screens before your first coffee.",
-   saved:"9 hours a month",
-   steps:[["Trigger","Every weekday at 07:00"],["Find","Overnight changes across cash, work and approvals"],["Check","Drop anything already handled"],["Draft","Write the briefing"],["Send","Post to Home and WhatsApp"]],
-   runs:[["Today 07:00","22s","ok","1 briefing","€0.02"],["Yesterday 07:00","19s","ok","1 briefing","€0.02"],["Mon 07:00","24s","ok","1 briefing","€0.02"]]},
-  {id:"o6", name:"Weekly stock check", kind:"task", owner:"Stock Watch", ownerKind:"agent", initials:"SW",
-   trigger:"Thursdays, 09:00", triggerKind:"schedule", next:"Thu 09:00", last:"2 lines flagged", status:"healthy", rate:96, on:true,
-   what:"Compares reorder points against what the week's jobs need and raises the purchase order lines.",
-   why:"Two jobs were rescheduled in June for parts nobody had ordered.",
+   steps:[["Trigger","Last week of the month"],["Find","Package progress from the project manager"],["Check","Percent complete against the contract value"],["Draft","Build the claim per package"],["Approval","Martin approves the claim","gate"],["Send","Issue to the main contractor"],["Update","Raise the invoice in Xero","external"]],
+   runs:[["Today 11:06","48s","ok","CastlePark " + CLAIM,"€0.04"],["Today 10:40","51s","ok","11 projects drafted","€0.05"],["Last month","46s","ok","12 claims drafted","€0.05"]]},
+  {id:"o3", name:"Chase overdue invoices", kind:"automation", owner:"Finance Agent", ownerKind:"agent", initials:"FA",
+   trigger:"Daily, 09:00", triggerKind:"schedule", next:"Tomorrow", last:"1 draft waiting", status:"approval", rate:96, on:true,
+   what:"Finds invoices past their due date, excludes anything in dispute, drafts a reminder in Lavelle's tone and parks it for a yes.",
+   why:"Chasing happened in bursts, so the oldest debt got the least attention.",
+   saved:"8 hours a month",
+   steps:[["Trigger","Every weekday at 09:00"],["Find","Invoices past their due date in Xero"],["Check","Exclude disputed invoices"],["Draft","Write the reminder"],["Approval","Emma or Martin reviews","gate"],["Send","Email the customer"],["Update","Log the chase against the invoice"]],
+   runs:[["Today 09:00","38s","ok","1 drafted, " + INV72.no,"€0.02"],["Yesterday 09:00","41s","ok","1 drafted","€0.02"],["Mon 09:00","36s","ok","0 overdue","€0.01"]]},
+  {id:"o4", name:"New tender follow-up", kind:"automation", owner:"Commercial Agent", ownerKind:"agent", initials:"CM",
+   trigger:"Quote issued", triggerKind:"event", next:"Event-based", last:"2 follow-ups sent", status:"healthy", rate:99, on:true,
+   what:"Seven days after a quote goes out, drafts a follow-up to the main contractor with the RECI registration and insurance attached.",
+   why:"Quotes went quiet after sending, and nobody knew which ones were still live.",
    saved:"5 hours a month",
-   steps:[["Trigger","Every Thursday at 09:00"],["Find","Lines below reorder point"],["Check","What this week's jobs need"],["Approval","Buyer confirms the order","gate"],["Update","Raise the purchase order"]],
-   runs:[["Thu 09:00","31s","ok","2 lines","€0.02"],["Thu 21 Aug 09:00","28s","ok","1 line","€0.02"]]},
-  {id:"o7", name:"Xero invoice sync", kind:"automation", owner:"Ops Watchdog", ownerKind:"agent", initials:"OW",
-   trigger:"Hourly", triggerKind:"schedule", next:"Paused", last:"Token expired", status:"failed", rate:62, on:false,
-   what:"Posts every finalised invoice into Xero and reconciles what came back.",
-   why:"Manual re-entry was the single biggest source of mismatched invoices.",
-   saved:"18 hours a month",
-   steps:[["Trigger","Every hour"],["Find","Invoices not yet in Xero"],["Send","Post to Xero","external"],["Check","Reconcile what came back"],["Update","Mark them synced"]],
-   runs:[["Today 02:14","1.2s","failed","0 of 148","€0.00","invalid_grant: refresh token expired 27 February"],["Today 01:14","1.1s","failed","0 of 141","€0.00","invalid_grant: refresh token expired 27 February"],["Yesterday 23:14","4s","ok","12 posted","€0.01"]]},
-  {id:"o8", name:"Weekend on-call handover", kind:"routine", owner:"Chief of Staff", ownerKind:"agent", initials:"CS",
-   trigger:"Fri, 16:30", triggerKind:"schedule", next:"Fri 16:30", last:"Sent to 3 people", status:"healthy", rate:97, on:true,
-   what:"Writes the weekend handover: open jobs, who is on call, and anything a customer is waiting on.",
-   why:"Weekend calls were being answered by whoever picked up, with no context.",
-   saved:"4 hours a month",
-   steps:[["Trigger","Every Friday at 16:30"],["Find","Open jobs and unanswered customers"],["Draft","Write the handover note"],["Send","WhatsApp the on-call rota"]],
-   runs:[["Fri 16:30","18s","ok","3 recipients","€0.02"],["Fri 15 Aug 16:30","21s","ok","3 recipients","€0.02"]]},
-  {id:"o9", name:"Timesheet reminder", kind:"task", owner:"Operations", ownerKind:"person", initials:"TW",
-   trigger:"Fri, 15:00", triggerKind:"schedule", next:"Fri 15:00", last:"9 of 12 submitted", status:"approval", rate:88, on:true,
-   what:"Nudges anyone who has not filed hours, then sends Operations the list still outstanding.",
-   why:"Payroll was chasing the same four people every week.",
+   steps:[["Trigger","A quote is issued"],["Find","The client contact on the tender"],["Check","Seven days with no reply"],["Draft","Write the follow-up"],["Send","Email the client"],["Update","Log it on the opportunity"]],
+   runs:[["Today 10:12","6s","ok","1 follow-up","€0.01"],["Yesterday 15:02","7s","ok","1 follow-up","€0.01"],["Fri 11:48","6s","ok","1 follow-up","€0.01"]]},
+  {id:"o5", name:"Insurance and certificate renewal", kind:"routine", owner:"Rachel Byrne", ownerKind:"person", initials:"RB",
+   trigger:"60 days before expiry", triggerKind:"event", next:"14:20", last:"Nothing due", status:"healthy", rate:100, on:true,
+   what:"Watches insurance, RECI registration and every electrician's qualifications, and gives sixty days' notice before one lapses.",
+   why:"Main contractors ask for current certificates at prequalification, and a lapsed one stalls a tender.",
    saved:"3 hours a month",
-   steps:[["Trigger","Every Friday at 15:00"],["Find","Staff with no hours filed"],["Send","Remind each person"],["Approval","Operations signs off the week","gate"]],
-   runs:[["Fri 15:00","12s","partial","9 of 12","€0.01"],["Fri 15 Aug 15:00","11s","ok","12 of 12","€0.01"]]},
+   steps:[["Trigger","60 days before a document expires"],["Find","The owner of the certificate"],["Check","Has a renewal already been booked?"],["Send","Notify the owner and Rachel"],["Update","Create the renewal task"]],
+   runs:[["Today 14:20","3s","ok","0 due","€0.00"],["Yesterday 14:20","4s","ok","0 due","€0.00"],["Fri 14:20","5s","ok","1 notified","€0.01"]]},
+  {id:"o6", name:"Morning briefing", kind:"routine", owner:"Briefing", ownerKind:"agent", initials:"BR",
+   trigger:"Weekdays, 07:00", triggerKind:"schedule", next:"Tomorrow", last:"Delivered 07:02", status:"healthy", rate:100, on:true,
+   what:"Reads the whole business overnight and tells Martin the two things that actually need him.",
+   why:"Martin was opening LiveCosts, Xero and the WhatsApp group before the vans left the yard.",
+   saved:"9 hours a month",
+   steps:[["Trigger","Every weekday at 07:00"],["Find","Overnight changes across projects, cash and approvals"],["Check","Drop anything already handled"],["Draft","Write the briefing"],["Send","Post to Home"]],
+   runs:[["Today 07:00","22s","ok","1 briefing","€0.02"],["Yesterday 07:00","19s","ok","1 briefing","€0.02"],["Mon 07:00","24s","ok","1 briefing","€0.02"]]},
+  {id:"o7", name:"Weekly materials check", kind:"task", owner:"Procurement Agent", ownerKind:"agent", initials:"PA",
+   trigger:"Thursdays, 09:00", triggerKind:"schedule", next:"Thu 09:00", last:"Tamlite flagged for a chase", status:"healthy", rate:96, on:true,
+   what:"Checks every open PO against next week's programme, flags late deliveries and supplier price movement.",
+   why:"Gangs stood idle twice in the spring waiting on materials nobody had chased.",
+   saved:"5 hours a month",
+   steps:[["Trigger","Every Thursday at 09:00"],["Find","Open POs and their delivery dates"],["Check","What next week's programme needs"],["Approval","Project manager confirms any new order","gate"],["Update","Raise or chase the PO"]],
+   runs:[["Thu 09:00","31s","ok","1 chase","€0.02"],["Last Thu 09:00","28s","ok","0 chases","€0.02"]]},
+  {id:"o8", name:"Xero invoice sync", kind:"automation", owner:"Finance Agent", ownerKind:"agent", initials:"FA",
+   trigger:"Every 15 minutes", triggerKind:"schedule", next:"14:45", last:"Synced 2 min ago", status:"healthy", rate:99, on:true,
+   what:"Two-way sync with Xero: approved claims post as invoices, and payments come back against the right project.",
+   why:"Manual re-entry was the biggest source of mismatched invoices.",
+   saved:"18 hours a month",
+   steps:[["Trigger","Every 15 minutes"],["Find","Invoices and payments changed since the last run"],["Send","Post new invoices to Xero","external"],["Check","Reconcile payments that came back"],["Update","Mark them synced on the project"]],
+   runs:[["Today 14:30","1.1s","ok","1 payment, " + E(APEX.amount),"€0.00"],["Today 14:15","1.0s","ok","0 changes","€0.00"],["Today 14:00","1.2s","ok","2 invoices","€0.00"]]},
+  {id:"o9", name:"Friday labour reconciliation", kind:"task", owner:"Ops Watchdog", ownerKind:"agent", initials:"OW",
+   trigger:"Fri, 15:00", triggerKind:"schedule", next:"Fri 15:00", last:"1 clock record unassigned", status:"approval", rate:92, on:true,
+   what:"Matches every Sync clock record against the project each person is assigned to, and lists anything that does not line up.",
+   why:"Hours booked to the wrong job made labour variances look worse, or better, than they were.",
+   saved:"4 hours a month",
+   steps:[["Trigger","Every Friday at 15:00"],["Find","This week's Sync clock records"],["Check","Each record against its project allocation"],["Approval","Project manager signs off the week","gate"],["Update","Post hours to project labour"]],
+   runs:[["Fri 15:00","12s","partial",T.people - 1 + " of " + T.people + " matched","€0.01","Dara Kelly not assigned to CastlePark labour"],["Last Fri 15:00","11s","ok","all matched","€0.01"]]},
   {id:"o10", name:"Overnight backup check", kind:"automation", owner:"Ops Watchdog", ownerKind:"agent", initials:"OW",
    trigger:"Daily, 03:00", triggerKind:"schedule", next:"Tonight", last:"All systems clean", status:"healthy", rate:100, on:true,
    what:"Confirms every nightly backup completed and the restore test passed, and raises an alert if not.",
-   why:"A failed backup went unnoticed for eleven days in January.",
+   why:"Nobody checked the backups until someone needed one.",
    saved:"2 hours a month",
    steps:[["Trigger","Every day at 03:00"],["Check","Every backup job completed"],["Check","Last restore test passed"],["Send","Alert only if something failed"]],
    runs:[["Today 03:00","8s","ok","6 jobs","€0.00"],["Yesterday 03:00","9s","ok","6 jobs","€0.00"]]},
   {id:"o11", name:"Month-end close pack", kind:"report", owner:"Finance Agent", ownerKind:"agent", initials:"FA",
-   trigger:"1st, 07:00", triggerKind:"schedule", next:"1 Sep 07:00", last:"Delivered 1 Aug", status:"healthy", rate:95, on:true,
-   what:"Assembles the close pack: aged debt, margin by area, cash position and the variance commentary.",
-   why:"Close took three days of copying between spreadsheets.",
+   trigger:"1st, 07:00", triggerKind:"schedule", next:"1st 07:00", last:"Delivered last month", status:"healthy", rate:95, on:true,
+   what:"Assembles the close pack: claims, cash, receivables, margin by project and the variance commentary.",
+   why:"Close took three days of copying between LiveCosts, Xero and spreadsheets.",
    saved:"16 hours a month",
-   steps:[["Trigger","First of the month at 07:00"],["Find","Last month's ledger and margin data"],["Check","Reconcile against the bank"],["Draft","Write the variance commentary"],["Send","Email the pack to Finance"]],
-   runs:[["1 Aug 07:00","3m 42s","ok","1 pack","€0.09"],["1 Jul 07:00","3m 51s","ok","1 pack","€0.09"]]}
+   steps:[["Trigger","First of the month at 07:00"],["Find","Last month's claims, costs and payments"],["Check","Reconcile against Xero"],["Draft","Write the variance commentary"],["Send","Email the pack to Martin and Emma"]],
+   runs:[["1st 07:00","3m 42s","ok","1 pack","€0.09"],["1st 07:00","3m 51s","ok","1 pack","€0.09"]]}
 ];
 
 const OPS_FILTERS = [
@@ -867,103 +1124,108 @@ const OPS_FILTERS = [
 const WORK_SECTIONS = [
   {id:"tasks", label:"Tasks", blurb:"Everything assigned to you or your team, in one permission-filtered list.",
    views:["All tasks","Due tasks","Review","Done"], filters:["Due date","Any status","Anyone","Any due date"]},
-  {id:"approvals", label:"Approvals", blurb:"Requests and their steps. Every decision is written as the person who made it.",
+  {id:"approvals", label:"Approvals", blurb:"Claims, POs and their steps. Every decision is written as the person who made it.",
    views:["Awaiting you","Awaiting others","Decided"], filters:["Raised date","Any value","Anyone"]},
-  {id:"workflows", label:"Workflows", blurb:"Automations and agent routines — what runs on its own, and who owns it.",
+  {id:"workflows", label:"Workflows", blurb:"Automations and agent routines: what runs on its own, and who owns it.",
    views:[], filters:[]},
   {id:"schedules", label:"Schedules", blurb:"The team calendar: when recurring work fires and what it costs the week.",
    views:[], filters:[]}
 ];
 
 const WORK_TASKS = [
-  {id:"w1", title:"Chase INV-10428 — Dunne & Sons", status:"In progress", priority:"High", who:"AN",
-   due:"2d overdue", late:true, client:"Dunne & Sons Ltd", day:"Today", mins:"25 mins", view:"Due tasks"},
-  {id:"w2", title:"Reassign Van 04 jobs off Ballincollig", status:"In progress", priority:"High", who:"MK",
-   due:"Due today", late:false, client:"Ballincollig depot", day:"Today", mins:"50 mins", view:"Due tasks"},
-  {id:"w3", title:"Approve purchase order PO-4471", status:"Review", priority:"Medium", who:"MK",
-   due:"Due 12:00", late:false, client:"Munster Plumbing", day:"Today", mins:"15 mins", view:"Review"},
-  {id:"w4", title:"Sign off August counter stocktake", status:"Not started", priority:"Medium", who:"SB",
-   due:"No due date", late:false, client:"Head office", day:"Any day", mins:"Mins", view:"All tasks"},
-  {id:"w5", title:"Ballincollig lease decision", status:"Not started", priority:"High", who:"MK",
-   due:"Thursday", late:false, client:"Ballincollig depot", day:"Thu", mins:"1 hour", view:"All tasks"},
-  {id:"w6", title:"VAT return — August", status:"Done", priority:"Medium", who:"AN",
-   due:"Filed Friday", late:false, client:"Head office", day:"Fri", mins:"2 hours", view:"Done", done:true}
+  {id:"w1", title:"Approve CastlePark July claim, " + CLAIM, status:"Review", priority:"High", who:"ML",
+   due:"Due today", late:false, client:CP.client, day:"Today", mins:"15 mins", view:"Review"},
+  {id:"w2", title:"Approve " + PO1.no + ", " + E(PO1.value), status:"Review", priority:"High", who:"ML",
+   due:"Due today", late:false, client:PO1.supplier, day:"Today", mins:"5 mins", view:"Review"},
+  {id:"w3", title:"Resolve Ringsend labour variance, +" + E(RL.variance), status:"In progress", priority:"High", who:"KB",
+   due:"Due Thu", late:false, client:RS.client, day:"Thu", mins:"1 hour", view:"Due tasks"},
+  {id:"w4", title:"Allocate diesel " + LV.eur2(D.exception) + ", card " + D.card, status:"Not started", priority:"Medium", who:"—",
+   due:"Due today", late:false, client:"Fleet", day:"Today", mins:"5 mins", view:"Due tasks"},
+  {id:"w5", title:"Assign Dara Kelly to CastlePark labour", status:"Not started", priority:"Medium", who:"KB",
+   due:"Due today", late:false, client:CP.client, day:"Today", mins:"5 mins", view:"Due tasks"},
+  {id:"w6", title:"Chase " + INV72.no + ", Northbank Developments", status:"In progress", priority:"High", who:"ED",
+   due:INV72.status, late:true, client:INV72.client, day:"Today", mins:"20 mins", view:"Due tasks", done:false},
+  {id:"w7", title:"Sign off Sandyford Office Campus quote", status:"Not started", priority:"Medium", who:"ML",
+   due:"Due " + SANDYFORD.due, late:false, client:SANDYFORD.client, day:SANDYFORD.due, mins:"30 mins", view:"All tasks"},
+  {id:"w8", title:"Submit Harbour Exchange claim", status:"Done", priority:"Medium", who:"CF",
+   due:"Submitted", late:false, client:HX.client, day:"Mon", mins:"45 mins", view:"Done", done:true}
 ];
 
 const WORKFLOWS = [
-  {name:"Overdue invoice reminder", state:"live", trigger:"schedule · daily 08:00",
-   actions:[["notify.email","write"],["tasks.create","write"]], lastRun:"Today 08:00",
-   result:"6 of 10 sent · partial", resultKind:"warn", runSummary:"11 ok · 3 partial",
-   runs:["ok","ok","partial","ok","ok","ok","partial","ok","ok","ok","ok","ok","partial","partial"]},
-  {name:"Approval routing over €10k", state:"live", trigger:"event · core.approval.created",
-   actions:[["approvals.route","read"],["notify.inbox","write"]], lastRun:"Today 08:54",
+  {name:"Monthly claim draft", state:"live", trigger:"schedule · month end 09:00",
+   actions:[["claims.build","write"],["approvals.route","write"]], lastRun:"Today 11:06",
+   result:CLAIM + " waiting on Martin", resultKind:"warn", runSummary:"12 ok",
+   runs:["ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok"]},
+  {name:"PO approval routing over €10,000", state:"live", trigger:"event · livecosts.po.created",
+   actions:[["approvals.route","read"],["notify.inbox","write"]], lastRun:"Today 09:12",
    result:"ok", resultKind:"ok", runSummary:"14 ok",
    runs:["ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok"]},
-  {name:"Unassigned visit escalation", state:"live", trigger:"event · site-visits.visit.created",
-   actions:[["notify.inbox","write"]], lastRun:"Today 07:00",
-   result:"ok", resultKind:"ok", runSummary:"9 ok · 1 failed",
-   runs:["idle","idle","ok","ok","failed","ok","ok","ok","idle","ok","ok","ok","ok","ok"]},
-  {name:"Xero invoice sync", state:"failing", trigger:"schedule · hourly",
-   actions:[["xero.post","external"]], lastRun:"Today 02:14",
-   result:"invalid_grant · dead-lettered", resultKind:"bad", runSummary:"4 failed",
-   runs:["ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","failed","failed","failed","failed"]}
+  {name:"Labour reconciliation", state:"live", trigger:"schedule · Fri 15:00",
+   actions:[["sync.read","read"],["labour.allocate","write"]], lastRun:"Fri 15:00",
+   result:"1 record unassigned", resultKind:"warn", runSummary:"11 ok · 3 partial",
+   runs:["ok","ok","partial","ok","ok","ok","partial","ok","ok","ok","ok","ok","ok","partial"]},
+  {name:"Xero invoice sync", state:"live", trigger:"schedule · every 15 min",
+   actions:[["xero.post","external"]], lastRun:"Today 14:30",
+   result:"ok", resultKind:"ok", runSummary:"14 ok",
+   runs:["ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok","ok"]}
 ];
 
 const SCHEDULES = [
-  {id:"s1", name:"Morning briefing", cadence:"Every weekday · 07:00", next:"Tomorrow 07:00", owner:"Briefing agent", on:true, day:1},
-  {id:"s2", name:"Overdue invoice reminder", cadence:"Daily · 08:00", next:"Tomorrow 08:00", owner:"Credit Control", on:true, day:1},
-  {id:"s3", name:"Xero invoice sync", cadence:"Hourly", next:"Paused", owner:"Ops Watchdog", on:false, day:0},
-  {id:"s4", name:"Weekly stock check", cadence:"Thursdays · 09:00", next:"Thu 09:00", owner:"Stock Watch", on:true, day:3},
-  {id:"s5", name:"Month-end close", cadence:"Last working day · 17:00", next:"Fri 17:00", owner:"Month-end close", on:true, day:4}
+  {id:"s1", name:"Morning briefing", cadence:"Every weekday · 07:00", next:"Tomorrow 07:00", owner:"Briefing", on:true, day:1},
+  {id:"s2", name:"Chase overdue invoices", cadence:"Daily · 09:00", next:"Tomorrow 09:00", owner:"Finance Agent", on:true, day:1},
+  {id:"s3", name:"Xero invoice sync", cadence:"Every 15 minutes", next:"14:45", owner:"Finance Agent", on:true, day:0},
+  {id:"s4", name:"Weekly materials check", cadence:"Thursdays · 09:00", next:"Thu 09:00", owner:"Procurement Agent", on:true, day:3},
+  {id:"s5", name:"Monthly claim draft", cadence:"Month end · 09:00", next:"Today 09:00", owner:"Claims Agent", on:true, day:4}
 ];
 
-const WIDGET_DEFS = [["inbox","Action inbox"],["work","My work"],["activity","Activity"],["kpi","Today's numbers"],["visits","Site visits"]];
+const WIDGET_DEFS = [["kpi","Business health"],["inbox","Management attention"],["visits","Today's sites"],["briefing","AI briefing"],["work","My work"],["activity","Activity"]];
+const OPEN_TASKS = WORK_TASKS.filter(t => !t.done);
 const WORK_WIDGETS = [
-  {id:"queue", label:"My queue", value:"8", hint:"assigned to you", icon:"work", queue:"mine"},
-  {id:"late", label:"Running late", value:"11", hint:"past their due date", icon:"health", queue:"overdue"},
-  {id:"unassigned", label:"Unassigned", value:"1", hint:"nobody owns it yet", icon:"teams", queue:"unassigned"},
-  {id:"week", label:"Next 7 days", value:"4", hint:"due this week", icon:"visits", queue:"upcoming"}
+  {id:"queue", label:"My queue", value:String(OPEN_TASKS.filter(t => t.who === "ML").length), hint:"assigned to Martin", icon:"work", queue:"mine"},
+  {id:"late", label:"Running late", value:String(OPEN_TASKS.filter(t => t.late).length), hint:"past their due date", icon:"health", queue:"overdue"},
+  {id:"unassigned", label:"Unassigned", value:String(OPEN_TASKS.filter(t => t.who === "—").length), hint:"nobody owns it yet", icon:"teams", queue:"unassigned"},
+  {id:"week", label:"Next 7 days", value:String(OPEN_TASKS.length), hint:"due this week", icon:"visits", queue:"upcoming"}
 ];
 const PERSONALITIES = ["Straight-talking","Warm","Formal","Dry"];
 const ANSWER_STYLES = ["Short answers","Show the working","Ask before acting"];
-/* Every context source and every registered tool the agent could be granted —
-   the builder shows the whole catalogue, grouped, rather than a sample. */
+/* Every context source and every registered tool the agent could be granted.
+   The builder shows the whole catalogue, grouped, rather than a sample. */
 const CONTEXT_DEFS = [
-  ["Organisations","records","Accounts, limits, payment behaviour"],
-  ["People","records","Contacts and internal staff"],
-  ["Files","records","Indexed documents and certificates"],
-  ["Tasks","work","Queues, owners, due dates"],
-  ["Site visits","work","Bookings, installers, outcomes"],
-  ["Approvals","work","What is waiting on a decision"],
-  ["Invoices","money","Issued, paid, past due"],
-  ["Quotes","money","Sent, accepted, expired"],
-  ["Payments","money","Receipts and allocations"],
+  ["Projects","records","Contract, progress, programme and margin"],
+  ["Customers","records","Main contractors, developers and contacts"],
+  ["People","records","Employees, subcontractors and external contacts"],
+  ["Files","records","Contracts, claims, certificates and insurance"],
+  ["Work packages","work","Packages, progress and labour by package"],
+  ["Site progress","work","Updates from project managers and foremen"],
+  ["Approvals","work","Claims and POs waiting on a decision"],
+  ["Claims","money","Monthly valuations and their stages"],
+  ["Invoices","money","Issued, paid and overdue, from Xero"],
+  ["Purchase orders","money","Committed cost and deliveries, from LiveCosts"],
   ["Activity log","system","Every event, agent and human"],
-  ["Modules","system","What this client has installed"],
-  ["Insights","system","Saved metrics and trends"]
+  ["Integrations","system","Xero, LiveCosts, Countfire, Sync and more"]
 ];
 const CONTEXT_SOURCES = CONTEXT_DEFS.map(c => c[0]);
 const SKILL_DEFS = [
-  ["Search records","read"],["Summarise activity","read"],["Read invoices","read"],
-  ["Read site visits","read"],["Check permissions","read"],
+  ["Search records","read"],["Summarise activity","read"],["Read projects","read"],
+  ["Read claims","read"],["Read invoices","read"],["Read POs","read"],["Check permissions","read"],
   ["Draft email","write"],["Create task","write"],["Update record","write"],
-  ["Schedule visit","write"],["Raise approval","write"],
-  ["Send email","external"],["Send WhatsApp","external"],["Post to Xero","external"],["Push to HubSpot","external"]
+  ["Raise approval","write"],["Allocate cost","write"],
+  ["Send email","external"],["Post to Xero","external"],["Post to WhatsApp group","external"]
 ];
-/* The two questions the agent asks back once it knows the job. */
+/* The phases the agent runs through once it knows the job. */
 const TRAIN_PHASES = [
-  ["Reading the whole ontology", "4,820 records"],
-  ["Learning how this business words things", "organisation → merchant"],
-  ["Researching the trade-supply domain", "12 sources"],
+  ["Reading the whole ontology", "17 entity types"],
+  ["Learning how Lavelle words things", "organisation → customer"],
+  ["Researching electrical contracting", "12 sources"],
   ["Writing its own system prompt", "1,240 tokens"]
 ];
 const BRIEF_QUESTIONS = [
-  {title:"What should it cover?", sub:"Pick as many as you like — we can refine later.",
-   options:[["Calendar","Meetings and what is coming up"],["Email","Unread and actionable inbox items"],
-            ["Records","Accounts that moved since yesterday"],["Money","Cash, overdue and anything at risk"],
+  {title:"What should it cover?", sub:"Pick as many as you like. We can refine later.",
+   options:[["Projects","Progress, programme and anything slipping"],["Money","Claims, cash and overdue invoices"],
+            ["Labour","Who is on site, and hours against budget"],["Approvals","Claims and POs waiting on you"],
             ["Something else","Tell me in the next message"]]},
   {title:"When should it land?", sub:"One is enough to start.",
-   options:[["Every morning 07:30","Before the yard opens"],["Weekdays 08:00","Monday to Friday only"],
+   options:[["Every morning 07:00","Before the vans leave the yard"],["Weekdays 08:00","Monday to Friday only"],
             ["Only when something changes","Event-driven, no noise"],["On demand","When you ask for it"]]}
 ];
 /* The words under a name, keyed to the same state the face lights with. */
@@ -984,16 +1246,17 @@ const FACE_TINTS = [
   ["#2a2118","Bronze","#eadccb"],["#16241f","Pine","#d1e4da"],["#2b1b1e","Oxblood","#eed5d7"]
 ];
 
+
 /* ---- ontology graph: generation, Dijkstra traversal, canvas render ---- */
 const CLUSTERS = [
-  ["Organisations", "#c8f04b", 0.00, 0.62, 46],
-  ["People",        "#6ad0f0", 0.90, 0.70, 52],
-  ["Files",         "#b06cf0", 1.75, 0.66, 58],
-  ["Tasks",         "#f0c04b", 2.55, 0.72, 44],
-  ["Invoices",      "#f0567f", 3.35, 0.60, 38],
-  ["Site visits",   "#5fe0a8", 4.15, 0.70, 40],
-  ["Locations",     "#f0803a", 4.95, 0.64, 30],
-  ["Approvals",     "#5f7cf0", 5.65, 0.72, 34]
+  ["Projects",        "#2ebfa5", 0.00, 0.62, 46],
+  ["People",          "#6ad0f0", 0.90, 0.70, 52],
+  ["Documents",       "#b06cf0", 1.75, 0.66, 58],
+  ["Work Packages",   "#f0c04b", 2.55, 0.72, 44],
+  ["Invoices",        "#f0567f", 3.35, 0.60, 38],
+  ["Purchase Orders", "#5fe0a8", 4.15, 0.70, 40],
+  ["Vehicles",        "#f0803a", 4.95, 0.64, 30],
+  ["Suppliers",       "#5f7cf0", 5.65, 0.72, 34]
 ];
 
 function mulberry(seed){
@@ -1182,6 +1445,7 @@ function buildGraph(){
     reach: nodes.reduce((m, n) => Math.max(m, Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z)), 0)};
   return {nodes, edges, adj, hubs, coreIds, bounds};
 }
+
 
 export {
   INK,

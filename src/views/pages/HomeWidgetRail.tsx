@@ -6,7 +6,7 @@ type Props = { v: any };
 export default function HomeWidgetRail({ v }: Props) {
   return (
     <>
-      <aside style={{"position":"relative","zIndex":"1","width":"352px","flex":"none","minHeight":"0","overflowY":"auto","display":"flex","flexDirection":"column","gap":"14px","padding":"2px 0 6px 20px"}}>
+      <aside className="lv-rail" style={{"position":"relative","zIndex":"1","width":"352px","flex":"none","minHeight":"0","overflowY":"auto","display":"flex","flexDirection":"column","gap":"14px","padding":"2px 0 6px 20px"}}>
         <div style={{"flex":"0 0 auto","minWidth":"0","overflow":"hidden","display":"flex","flexWrap":"nowrap","alignItems":"center","justifyContent":"space-between","gap":"4px","padding":"2px 0 4px","fontFamily":"var(--mono)"}}>
           {arr(v.flipUnits).map((u: any, i15: number) => (
             <Fragment key={i15}>
@@ -91,12 +91,49 @@ export default function HomeWidgetRail({ v }: Props) {
             </div>
           </>
         )}
+        {v.show?.kpi && (
+          <>
+            <div style={{"background":"var(--surface)","border":"1px solid var(--border)","borderRadius":"var(--card-r,18px)","backdropFilter":"blur(20px) saturate(1.3)","boxShadow":"var(--card-shadow)","transition":"transform .28s var(--ease),border-color .24s var(--ease),box-shadow .28s var(--ease)","padding":"20px 22px 22px"}}>
+              <div style={{"display":"flex","alignItems":"center","gap":"10px"}}>
+                <div style={{"flex":"1","fontSize":"13.5px","fontWeight":"500"}}>
+                  {"Business health"}
+                </div>
+                {v.widgetEdit && (
+                  <>
+                    <button className="ixd" onClick={v.removeKpi} title="Remove widget" style={{"width":"24px","height":"24px","flex":"none","border":"1px solid var(--border)","borderRadius":"8px","background":"var(--surface-2)","color":"var(--dim)","cursor":"pointer","display":"flex","alignItems":"center","justifyContent":"center","transition":"color .2s var(--ease),border-color .2s var(--ease)"}}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                        <path d="M6 6l12 12 M18 6 6 18" />
+                      </svg>
+                    </button>
+                  </>
+                )}
+              </div>
+              <div style={{"display":"grid","gridTemplateColumns":"1fr 1fr","gap":"10px","marginTop":"14px"}}>
+                {arr(v.miniKpis).map((k: any, i20: number) => (
+                  <Fragment key={i20}>
+                    <div style={{"padding":"13px 14px","background":"var(--surface-2)","border":"1px solid var(--border)","borderRadius":"var(--card-r,18px)"}}>
+                      <div style={{"fontSize":"11.5px","color":"var(--dim)"}}>
+                        {txt(k?.label)}
+                      </div>
+                      <div style={{"fontSize":"19px","fontWeight":"500","letterSpacing":"-.6px","marginTop":"6px"}}>
+                        {txt(k?.value)}
+                      </div>
+                      <div style={css(cat("font-size:11px;color:", k?.deltaColor, ";margin-top:4px"))}>
+                        {txt(k?.delta)}
+                      </div>
+                    </div>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
         {v.show?.inbox && (
           <>
             <div style={{"background":"var(--surface)","border":"1px solid var(--border)","borderRadius":"var(--card-r,18px)","backdropFilter":"blur(20px) saturate(1.3)","boxShadow":"var(--card-shadow)","transition":"transform .28s var(--ease),border-color .24s var(--ease),box-shadow .28s var(--ease)","padding":"20px 22px 10px"}}>
               <div style={{"display":"flex","alignItems":"center","gap":"10px"}}>
                 <div style={{"flex":"1","fontSize":"13.5px","fontWeight":"500"}}>
-                  {"Action inbox"}
+                  {"Management attention"}
                 </div>
                 <span style={{"height":"24px","display":"flex","alignItems":"center","padding":"0 10px","background":"var(--surface-2)","border":"1px solid var(--border)","borderRadius":"var(--r-sm,9px)","fontFamily":"var(--mono)","fontSize":"11px","color":"var(--dim)"}}>
                   {txt(v.inboxCount)}
@@ -141,6 +178,67 @@ export default function HomeWidgetRail({ v }: Props) {
             </div>
           </>
         )}
+        {v.show?.visits && (
+          <>
+            <div style={{"background":"var(--surface)","border":"1px solid var(--border)","borderRadius":"var(--card-r,18px)","backdropFilter":"blur(20px) saturate(1.3)","boxShadow":"var(--card-shadow)","transition":"transform .28s var(--ease),border-color .24s var(--ease),box-shadow .28s var(--ease)","padding":"20px 22px 10px"}}>
+              <div style={{"display":"flex","alignItems":"center","gap":"10px"}}>
+                <div style={{"flex":"1","fontSize":"13.5px","fontWeight":"500"}}>
+                  {"Today's sites"}
+                </div>
+                {v.widgetEdit && (
+                  <>
+                    <button className="ixd" onClick={v.removeVisits} title="Remove widget" style={{"width":"24px","height":"24px","flex":"none","border":"1px solid var(--border)","borderRadius":"8px","background":"var(--surface-2)","color":"var(--dim)","cursor":"pointer","display":"flex","alignItems":"center","justifyContent":"center","transition":"color .2s var(--ease),border-color .2s var(--ease)"}}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                        <path d="M6 6l12 12 M18 6 6 18" />
+                      </svg>
+                    </button>
+                  </>
+                )}
+              </div>
+              <div style={{"marginTop":"6px"}}>
+                {arr(v.visitWidget).map((v: any, i21: number) => (
+                  <Fragment key={i21}>
+                    <div onClick={v?.go} style={{"display":"flex","alignItems":"center","gap":"11px","padding":"11px 0","borderTop":"1px solid var(--border)","cursor":"pointer"}}>
+                      <span style={css(cat("width:7px;height:7px;border-radius:2px;flex:none;background:", v?.dot))} />
+                      <span style={{"flex":"1","minWidth":"0","fontSize":"12.5px","overflow":"hidden","textOverflow":"ellipsis","whiteSpace":"nowrap"}}>
+                        {txt(v?.title)}
+                      </span>
+                      <span style={{"fontFamily":"var(--mono)","fontSize":"10.5px","color":"var(--faint)"}}>
+                        {txt(v?.when)}
+                      </span>
+                    </div>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+        {v.show?.briefing && (
+          <>
+            <div style={{"background":"var(--surface)","border":"1px solid var(--accent-line)","borderRadius":"var(--card-r,18px)","backdropFilter":"blur(20px) saturate(1.3)","boxShadow":"var(--card-shadow)","padding":"18px 20px 18px","backgroundImage":"linear-gradient(160deg,var(--accent-faint),transparent 60%)"}}>
+              <div style={{"display":"flex","alignItems":"center","gap":"10px"}}>
+                <span style={{"width":"6px","height":"6px","borderRadius":"2px","background":"var(--accent)","boxShadow":"0 0 8px var(--accent)"}} />
+                <div style={{"flex":"1","fontSize":"13.5px","fontWeight":"500"}}>
+                  {"AI briefing"}
+                </div>
+                <span style={{"fontFamily":"var(--mono)","fontSize":"10.5px","color":"var(--faint)"}}>{"07:00"}</span>
+                {v.widgetEdit && (
+                  <>
+                    <button className="ixd" onClick={v.removeBriefing} title="Remove widget" style={{"width":"24px","height":"24px","flex":"none","border":"1px solid var(--border)","borderRadius":"8px","background":"none","color":"var(--dim)","cursor":"pointer"}}>
+                      {"×"}
+                    </button>
+                  </>
+                )}
+              </div>
+              <div style={{"marginTop":"12px","fontSize":"13px","lineHeight":"1.6","color":"var(--body)"}}>
+                {txt(v.briefingText)}
+              </div>
+              <button className="ixe" onClick={v.askBriefing} style={{"marginTop":"14px","height":"30px","display":"inline-flex","alignItems":"center","gap":"7px","padding":"0 13px","background":"var(--surface-2)","border":"1px solid var(--border)","borderRadius":"999px","fontSize":"12px","color":"var(--ink)","cursor":"pointer"}}>
+                {"Ask for the full briefing"}
+              </button>
+            </div>
+          </>
+        )}
         {v.show?.work && (
           <>
             <div style={{"background":"var(--surface)","border":"1px solid var(--border)","borderRadius":"var(--card-r,18px)","backdropFilter":"blur(20px) saturate(1.3)","boxShadow":"var(--card-shadow)","transition":"transform .28s var(--ease),border-color .24s var(--ease),box-shadow .28s var(--ease)","padding":"20px 22px 12px"}}>
@@ -175,78 +273,6 @@ export default function HomeWidgetRail({ v }: Props) {
                       </span>
                       <span style={css(cat("font-family:var(--mono);font-size:10.5px;color:", t?.dueColor))}>
                         {txt(t?.due)}
-                      </span>
-                    </div>
-                  </Fragment>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-        {v.show?.kpi && (
-          <>
-            <div style={{"background":"var(--surface)","border":"1px solid var(--border)","borderRadius":"var(--card-r,18px)","backdropFilter":"blur(20px) saturate(1.3)","boxShadow":"var(--card-shadow)","transition":"transform .28s var(--ease),border-color .24s var(--ease),box-shadow .28s var(--ease)","padding":"20px 22px 22px"}}>
-              <div style={{"display":"flex","alignItems":"center","gap":"10px"}}>
-                <div style={{"flex":"1","fontSize":"13.5px","fontWeight":"500"}}>
-                  {"Today's numbers"}
-                </div>
-                {v.widgetEdit && (
-                  <>
-                    <button className="ixd" onClick={v.removeKpi} title="Remove widget" style={{"width":"24px","height":"24px","flex":"none","border":"1px solid var(--border)","borderRadius":"8px","background":"var(--surface-2)","color":"var(--dim)","cursor":"pointer","display":"flex","alignItems":"center","justifyContent":"center","transition":"color .2s var(--ease),border-color .2s var(--ease)"}}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                        <path d="M6 6l12 12 M18 6 6 18" />
-                      </svg>
-                    </button>
-                  </>
-                )}
-              </div>
-              <div style={{"display":"grid","gridTemplateColumns":"1fr 1fr","gap":"10px","marginTop":"14px"}}>
-                {arr(v.miniKpis).map((k: any, i20: number) => (
-                  <Fragment key={i20}>
-                    <div style={{"padding":"13px 14px","background":"var(--surface-2)","border":"1px solid var(--border)","borderRadius":"var(--card-r,18px)"}}>
-                      <div style={{"fontSize":"11.5px","color":"var(--dim)"}}>
-                        {txt(k?.label)}
-                      </div>
-                      <div style={{"fontSize":"19px","fontWeight":"500","letterSpacing":"-.6px","marginTop":"6px"}}>
-                        {txt(k?.value)}
-                      </div>
-                      <div style={css(cat("font-size:11px;color:", k?.deltaColor, ";margin-top:4px"))}>
-                        {txt(k?.delta)}
-                      </div>
-                    </div>
-                  </Fragment>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-        {v.show?.visits && (
-          <>
-            <div style={{"background":"var(--surface)","border":"1px solid var(--border)","borderRadius":"var(--card-r,18px)","backdropFilter":"blur(20px) saturate(1.3)","boxShadow":"var(--card-shadow)","transition":"transform .28s var(--ease),border-color .24s var(--ease),box-shadow .28s var(--ease)","padding":"20px 22px 10px"}}>
-              <div style={{"display":"flex","alignItems":"center","gap":"10px"}}>
-                <div style={{"flex":"1","fontSize":"13.5px","fontWeight":"500"}}>
-                  {"Site visits this week"}
-                </div>
-                {v.widgetEdit && (
-                  <>
-                    <button className="ixd" onClick={v.removeVisits} title="Remove widget" style={{"width":"24px","height":"24px","flex":"none","border":"1px solid var(--border)","borderRadius":"8px","background":"var(--surface-2)","color":"var(--dim)","cursor":"pointer","display":"flex","alignItems":"center","justifyContent":"center","transition":"color .2s var(--ease),border-color .2s var(--ease)"}}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                        <path d="M6 6l12 12 M18 6 6 18" />
-                      </svg>
-                    </button>
-                  </>
-                )}
-              </div>
-              <div style={{"marginTop":"6px"}}>
-                {arr(v.visitWidget).map((v: any, i21: number) => (
-                  <Fragment key={i21}>
-                    <div style={{"display":"flex","alignItems":"center","gap":"11px","padding":"11px 0","borderTop":"1px solid var(--border)"}}>
-                      <span style={css(cat("width:7px;height:7px;border-radius:2px;flex:none;background:", v?.dot))} />
-                      <span style={{"flex":"1","minWidth":"0","fontSize":"12.5px","overflow":"hidden","textOverflow":"ellipsis","whiteSpace":"nowrap"}}>
-                        {txt(v?.title)}
-                      </span>
-                      <span style={{"fontFamily":"var(--mono)","fontSize":"10.5px","color":"var(--faint)"}}>
-                        {txt(v?.when)}
                       </span>
                     </div>
                   </Fragment>

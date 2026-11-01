@@ -12,6 +12,7 @@ import Activity from "./pages/Activity";
 import Settings from "./pages/Settings";
 import Dashboard from "./pages/Dashboard";
 import Agents from "./pages/Agents";
+import Module from "./pages/Module";
 import HeliosMini from "./overlays/HeliosMini";
 import WorkViewer from "./overlays/WorkViewer";
 import AgentStudio from "./overlays/AgentStudio";
@@ -31,15 +32,15 @@ export default function AppShell({ v }: Props) {
       <nav data-rail-nav="1" style={css(v.railOuter)}>
         <span style={css(v.railThumbStyle)} />
         <div style={css(cat(v.railRowStyle, "margin-bottom:22px"))}>
-          <button className={cx("ix0", "ix1")} onClick={v.toggleRail} title={v.railLabel} style={{"width":"36px","height":"36px","flex":"none","border":"0","borderRadius":"var(--cta-r,11px)","background":"var(--accent-fill,var(--accent))","color":"var(--on-accent)","boxShadow":"var(--accent-glow,none)","cursor":"pointer","display":"flex","alignItems":"center","justifyContent":"center","fontSize":"13px","fontWeight":"600","padding":"0","transition":"transform .2s var(--ease)"}}>
-            {"K"}
+          <button className={cx("ix0", "ix1")} onClick={v.toggleRail} title={v.railLabel} style={{"width":"36px","height":"36px","flex":"none","border":"0","borderRadius":"var(--cta-r,11px)","background":"var(--accent-fill,var(--accent))","color":"var(--on-accent)","boxShadow":"var(--accent-glow,none)","cursor":"pointer","display":"flex","alignItems":"center","justifyContent":"center","fontSize":"13px","fontWeight":"600","padding":"0","overflow":"hidden","transition":"transform .2s var(--ease)"}}>
+            <img src="/logo/lavelle-mark.png" alt="Lavelle" className="lv-mark" style={{"borderRadius":"inherit"}} />
           </button>
           <span style={css(v.brandStyle)}>
             <span style={{"display":"block","fontSize":"15px","fontWeight":"600","letterSpacing":"-.3px","color":"var(--ink)"}}>
-              {"Kilbride Group"}
+              {"Lavelle Electrical"}
             </span>
             <span style={{"display":"block","marginTop":"2px","fontSize":"9px","fontWeight":"500","letterSpacing":".16em","color":"var(--accent)"}}>
-              {"PULSE · OPERATIONS"}
+              {"PULSE · CONTROL LAYER"}
             </span>
           </span>
           {v.railOpen && (
@@ -57,6 +58,15 @@ export default function AppShell({ v }: Props) {
             {item?.isDivider && (
               <>
                 <div style={{"width":"20px","height":"1px","background":"var(--track)","margin":"7px 0"}} />
+              </>
+            )}
+            {item?.isSection && (
+              <>
+                {item?.showLabel ? (
+                  <div style={{"width":"100%","padding":"14px 14px 6px","fontFamily":"var(--mono)","fontSize":"9px","letterSpacing":".16em","color":"var(--faint)","boxSizing":"border-box"}}>{txt(item?.label)}</div>
+                ) : (
+                  <div style={{"width":"20px","height":"1px","background":"var(--track)","margin":"7px 0"}} />
+                )}
               </>
             )}
             {item?.isItem && (
@@ -96,14 +106,14 @@ export default function AppShell({ v }: Props) {
               </div>
               <div style={{"display":"flex","alignItems":"center","gap":"11px","marginTop":"12px"}}>
                 <div style={{"width":"40px","height":"40px","flex":"none","borderRadius":"999px","background":"var(--accent-soft)","color":"var(--accent)","display":"flex","alignItems":"center","justifyContent":"center","fontSize":"13px","fontWeight":"600"}}>
-                  {"MK"}
+                  {"ML"}
                 </div>
                 <div style={{"minWidth":"0"}}>
                   <div style={{"fontSize":"17px","fontWeight":"600","letterSpacing":"-.3px","color":"var(--ink)","whiteSpace":"nowrap","overflow":"hidden","textOverflow":"ellipsis"}}>
-                    {"Martin Kilbride"}
+                    {"Martin Lavelle"}
                   </div>
                   <div style={{"fontSize":"12.5px","color":"var(--faint)","marginTop":"2px","whiteSpace":"nowrap","overflow":"hidden","textOverflow":"ellipsis"}}>
-                    {"Kilbride Group · Owner"}
+                    {"Lavelle Electrical Group · MD"}
                   </div>
                 </div>
               </div>
@@ -143,14 +153,14 @@ export default function AppShell({ v }: Props) {
             </button>
             <div style={css(cat(v.railRowStyle, "margin-top:10px;padding:12px 10px;border-top:1px solid var(--border)"))}>
               <div style={{"width":"40px","height":"40px","flex":"none","borderRadius":"12px","background":"var(--surface-2)","border":"1px solid var(--border)","color":"var(--body)","display":"flex","alignItems":"center","justifyContent":"center","fontSize":"12px","fontWeight":"600","cursor":"pointer"}}>
-                {"MK"}
+                {"ML"}
               </div>
               <span style={css(v.brandStyle)}>
                 <span style={{"display":"block","fontSize":"14px","fontWeight":"500","color":"var(--ink)"}}>
-                  {"Martin Kilbride"}
+                  {"Martin Lavelle"}
                 </span>
                 <span style={{"display":"block","marginTop":"2px","fontSize":"12px","color":"var(--faint)"}}>
-                  {"Kilbride Group · Owner"}
+                  {"Lavelle Electrical Group · MD"}
                 </span>
               </span>
             </div>
@@ -311,10 +321,10 @@ export default function AppShell({ v }: Props) {
                         <>
                           <div style={{"minWidth":"0"}}>
                             <div style={{"fontSize":"12px","fontWeight":"500","lineHeight":"1.2","whiteSpace":"nowrap"}}>
-                              {"Martin Kilbride"}
+                              {"Martin Lavelle"}
                             </div>
                             <div style={{"fontSize":"10.5px","color":"var(--faint)","lineHeight":"1.2"}}>
-                              {"Owner"}
+                              {"Managing Director"}
                             </div>
                           </div>
                         </>
@@ -389,6 +399,7 @@ export default function AppShell({ v }: Props) {
         {v.isDashboard && <DashboardKpiBand v={v} />}
         <div data-scroll-main="1" style={{"flex":"1","minHeight":"0","overflowY":"auto","overflowX":"hidden","scrollbarWidth":"none"}}>
           {v.isChat && <Home v={v} />}
+          {v.isModule && <Module v={v} />}
           {v.isWork && <Work v={v} />}
           {v.isRecords && <Records v={v} />}
           {v.rec?.isContacts && (
@@ -592,6 +603,34 @@ export default function AppShell({ v }: Props) {
               </svg>
             </span>
           </button>
+        </>
+      )}
+      {v.mobile && (
+        <>
+          <nav className="lv-mnav" aria-label="Primary">
+            {arr(v.mnav).map((t: any, i: number) => (
+              <button key={i} className={t?.on ? "on" : ""} onClick={t?.go}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={t?.d} /></svg>
+                <span>{t?.label}</span>
+              </button>
+            ))}
+            <button className={v.moreOpen ? "on" : ""} onClick={v.toggleMore}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round"><path d="M5 12h.01 M12 12h.01 M19 12h.01" /></svg>
+              <span>More</span>
+            </button>
+          </nav>
+          {v.moreOpen && (
+            <div onClick={v.closeMore} style={{"position":"fixed","inset":"0","zIndex":"59","background":"var(--scrim)","backdropFilter":"blur(6px)"}}>
+              <div onClick={v.stop} style={{"position":"absolute","left":"10px","right":"10px","bottom":"84px","maxHeight":"70vh","overflowY":"auto","background":"var(--overlay)","border":"1px solid var(--border)","borderRadius":"22px","padding":"10px","display":"grid","gridTemplateColumns":"1fr 1fr","gap":"6px"}}>
+                {arr(v.mmore).map((m: any, i: number) => (
+                  <button key={i} onClick={m?.go} style={{"display":"flex","alignItems":"center","gap":"10px","height":"48px","padding":"0 14px","border":"1px solid var(--border)","borderRadius":"14px","background":m?.on ? "var(--accent-soft)" : "var(--surface)","color":m?.on ? "var(--accent)" : "var(--ink)","fontSize":"13px","cursor":"pointer","textAlign":"left"}}>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={m?.d} /></svg>
+                    {txt(m?.label)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
       {v.miniOpen && <HeliosMini v={v} />}
